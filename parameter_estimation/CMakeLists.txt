@@ -17,6 +17,9 @@ add_executable(parameter_estimation main.cpp)
 # Link Eigen3 libraries
 target_link_libraries(parameter_estimation PUBLIC Eigen3::Eigen)
 
+file(COPY "${PROJECT_SOURCE_DIR}/dataset" DESTINATION "${CMAKE_BINARY_DIR}")
+
+include_directories("${PROJECT_SOURCE_DIR}/dataset")
 
 # Include rapidcsv headers
 target_include_directories(parameter_estimation PRIVATE ${RAPIDCSV_INCLUDE_DIRS})
