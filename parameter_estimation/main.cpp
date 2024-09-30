@@ -23,23 +23,42 @@ int main()
     // Use least squares to estimate the (constant) mass and mass center of an unknown robot end effector tool.
 
     try {
-        rapidcsv::Document doc("C:/libs/dataset/0-calibration_fts-accel.csv");
+        rapidcsv::Document doc("C:/libs/dataset/0-calibration_fts-accel.csv", rapidcsv::LabelParams(-1, -1));
 
 
 
-        try {
-            std::vector<float> fx = doc.GetColumn<float>("fx");
-            std::cout << "JIPPU:: " << fx.size() << std::endl;
-            float buffer = 0;
-            for (int i = 0; i < fx.size(); i++) {
-                buffer += fx[i];
-            }
-            fx_bias = buffer/fx.size();
+        std::vector<std::vector<float>> bufferVector(6);
+        std::vector<float> biasVector(6);
 
-        } catch (const std::invalid_argument& e) {
-            std::cerr << "Error: Fuck dette" << e.what() << std::endl;
+
+        for (int i = 0; i < 5; i++) {
+            bufferVector[i] = doc.GetColumn<float>(i);
         }
 
+        /*std::cout << "loaded colums" << std::endl;
+        std::cout << bufferVector[0].size() << std::endl;
+        for (int i = 0; i < bufferVector[0].size(); i++) {
+            std::cout << i << ": " << bufferVector[0][i] << std::endl;
+        }*/
+
+
+        for (int i = 0; i < bufferVector.size(); i++) {
+            float buffer = 0;
+            for (int j = 0; j < bufferVector[i].size(); j++) {
+                //std::cout << bufferVector[i][j] << std::endl;
+                buffer += bufferVector[i][j];
+            }
+
+            //std::cout << "NEW" << std::endl;
+            biasVector[i] = buffer/bufferVector[i].size();
+            //std::cout << biasVector[i] << std::endl;
+        }
+
+
+        for (int i = 0; i < biasVector.size(); i++) {
+            std::cout << i << ": " << biasVector[i] << std::endl;
+            //std::cout << bufferVector[i].size() << std::endl;
+        }
 
         std::cout << "Doc loaded: ";
 
@@ -50,8 +69,5 @@ int main()
     }
 
 
-
-
-    std::cout << fx_bias << std::endl;
     return 0;
 }
