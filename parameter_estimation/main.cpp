@@ -31,7 +31,7 @@ int main()
         std::vector<float> biasVector(6);
 
 
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < biasVector.size(); i++) {
             bufferVector[i] = doc.GetColumn<float>(i);
         }
 
