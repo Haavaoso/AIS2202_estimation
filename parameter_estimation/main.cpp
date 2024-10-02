@@ -25,15 +25,15 @@ int main()
     try {
         rapidcsv::Document doc(filePath);
 
-        std::vector<std::vector<float>> bufferVector(6);
-        std::vector<float> biasVector(6);
+        std::vector<std::vector<double>> bufferVector(6);
+        std::vector<double> biasVector(6);
 
         for (int i = 0; i < biasVector.size(); i++) {
-            bufferVector[i] = doc.GetColumn<float>(i);
+            bufferVector[i] = doc.GetColumn<double>(i);
         }
 
         for (int i = 0; i < bufferVector.size(); i++) {
-            float buffer = 0;
+            double buffer = 0;
             for (int j = 0; j < bufferVector[i].size(); j++) {
                 //std::cout << bufferVector[i][j] << std::endl;
                 buffer += bufferVector[i][j];
@@ -46,19 +46,17 @@ int main()
             std::cout << i << ": " << biasVector[i] << std::endl;
         }
 
-
-
         //Create rotation matrix of the FTS
-        std::vector<std::vector<float>> r1x(3);
-        std::vector<std::vector<float>> r2x(3);
-        std::vector<std::vector<float>> r3x(3);
+        std::vector<std::vector<double>> r1x(3);
+        std::vector<std::vector<double>> r2x(3);
+        std::vector<std::vector<double>> r3x(3);
 
-        std::vector<Eigen::Matrix3f> rotationMatrices(24);
+        std::vector<Eigen::Matrix3d> rotationMatrices(24);
 
         for (int i = 0; i < 3; i++) {
-            r1x[i] = doc.GetColumn<float>(i+12);
-            r2x[i] = doc.GetColumn<float>(i+15);
-            r3x[i] = doc.GetColumn<float>(i+18);
+            r1x[i] = doc.GetColumn<double>(i+12);
+            r2x[i] = doc.GetColumn<double>(i+15);
+            r3x[i] = doc.GetColumn<double>(i+18);
         }
 
 
@@ -88,12 +86,12 @@ int main()
 
         //GRAVITY VECTOR [X, Y, Z]
         ;  // This will store the transposed matrix
-        std::vector<Eigen::Vector3f> gravity_XYZ(24);
-        std::vector<std::vector<float>> gravityBuffer(3, std::vector<float>(24)); // 3 vectors each of size 24
-        std::vector<Eigen::VectorXf> G_I(24);  // Use RowVector3f to store transposed vector
+        std::vector<Eigen::Vector3d> gravity_XYZ(24);
+        std::vector<std::vector<double>> gravityBuffer(3, std::vector<double>(24)); // 3 vectors each of size 24
+        std::vector<Eigen::VectorXd> G_I(24);  // Use RowVector3f to store transposed vector
 
         for (int i = 0; i < gravityBuffer.size(); i++) {
-            gravityBuffer[i] = doc.GetColumn<float>(i+9);
+            gravityBuffer[i] = doc.GetColumn<double>(i+9);
         }
 
 
@@ -104,14 +102,15 @@ int main()
              G_I[i] = gravity_XYZ[i].transpose();  // TRANSPOSED IN ROW VECTOR
          }
 
-        std::vector<Eigen::Vector3f> s_G_i(24);  // Change from Matrix3f to Vector3f
+        std::vector<Eigen::Vector3d> s_G_i(24);  // Change from Matrix3f to Vector3f
 
         for (int i = 0; i < rotationMatrices.size(); i++) {
             s_G_i[i] = rotationMatrices[i] * G_I[i];
         }
 
-        Eigen::VectorXf largeF(72,1);
-        Eigen::VectorXf largeG(72,1);
+        Eigen::VectorXd largeF(72);
+        Eigen::VectorXd largeG(72);
+        Eigen::VectorXd largeT(72);
 
 
          for (int holyShit = 0; holyShit < 72; holyShit++) {
@@ -131,15 +130,47 @@ int main()
              }
              largeF[holyShit] = bufferVector[ogga][holyShit - hehe];
              largeG[holyShit] = gravityBuffer[ogga][holyShit - hehe];
+             largeT[holyShit] = bufferVector[3+ogga][holyShit - hehe];
          }
 
 
 
 
-        auto coolMass = (largeF.transpose() * largeG) / (largeG.transpose() * largeG);
+        double mass = (largeF.transpose().dot(largeG)) / (largeG.transpose().dot(largeG));
+        std::cout << "mass: " << mass  << std::endl;
 
-         std::cout << coolMass << std::endl;
+        Eigen::MatrixXd largeA(3 * gravity_XYZ.size(), 3);
+        for (int i = 0; i < gravity_XYZ.size(); i++) {
+            Eigen::MatrixXd A_x(3, 3);
+            A_x(0, 0) = 0;
+            A_x(0, 1) = gravity_XYZ[i][2];
+            A_x(0, 2) = -gravity_XYZ[i][1];
 
+            A_x(1, 0) = -gravity_XYZ[i][2];
+            A_x(1, 1) = gravity_XYZ[i][0];
+            A_x(1, 2) = gravity_XYZ[i][2];
+
+            A_x(2, 0) = gravity_XYZ[i][1];
+            A_x(2, 1) = -gravity_XYZ[i][0];
+            A_x(2, 2) = 0;
+            largeA.block<3,3>(i*3, 0) = A_x;
+
+        }
+
+        // Calculate the product A^T * A
+        auto ATA = largeA.transpose() * largeA;
+
+        // Compute the pseudo-inverse of ATA
+        auto ATA_pseudo_inv = pseudo_inverse(ATA);
+
+        // Multiply by A^T and T, and scale by 1/mass
+        auto r = (1.0 / mass) * (ATA_pseudo_inv *(largeA.transpose()) * (largeT));
+
+        std::cout << "Center of Mass: " << r << std::endl;
+
+
+
+        // std::cout << "not mass: " << r  << std::endl;
 
 
     } catch (...) {
