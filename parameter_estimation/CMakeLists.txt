@@ -19,7 +19,7 @@ target_link_libraries(parameter_estimation PUBLIC Eigen3::Eigen)
 
 file(COPY "${PROJECT_SOURCE_DIR}/dataset" DESTINATION "${CMAKE_BINARY_DIR}")
 
-include_directories("${PROJECT_SOURCE_DIR}/dataset")
+include_directories("${CMAKE_SOURCE_DIR}/include")
 
 # Include rapidcsv headers
 target_include_directories(parameter_estimation PRIVATE ${RAPIDCSV_INCLUDE_DIRS})
