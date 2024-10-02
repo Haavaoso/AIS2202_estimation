@@ -95,18 +95,22 @@ int main()
         }
 
 
-         for (int i = 0; i < 24; i++) {
-             for (int j = 0; j < 3; j ++){
-                 gravity_XYZ[i][j] = bufferVector[j][i];
-             }
-             G_I[i] = gravity_XYZ[i].transpose();  // TRANSPOSED IN ROW VECTOR
+         for (int i = 0; i < gravity_XYZ.size(); i++) {
+                 gravity_XYZ[i].x() = gravityBuffer[0][i];
+                 gravity_XYZ[i].y() = gravityBuffer[1][i];
+                 gravity_XYZ[i].z() = gravityBuffer[2][i];
          }
 
-        std::vector<Eigen::Vector3d> s_G_i(24);  // Change from Matrix3f to Vector3f
+        // std::vector<Eigen::Vector3d> s_G_i(24);  // Change from Matrix3f to Vector3f
+        //
+        // for (int i = 0; i < rotationMatrices.size(); i++) {
+        //     s_G_i[i] = rotationMatrices[i] * G_I[i];
+        //     std::cout << s_G_i[i] << std::endl;
+        // }
+        // std::cout << s_G_i.size() << std::endl;
 
-        for (int i = 0; i < rotationMatrices.size(); i++) {
-            s_G_i[i] = rotationMatrices[i] * G_I[i];
-        }
+
+
 
         Eigen::VectorXd largeF(72);
         Eigen::VectorXd largeG(72);
@@ -133,7 +137,9 @@ int main()
              largeT[holyShit] = bufferVector[3+ogga][holyShit - hehe];
          }
 
-
+        std::cout << "F: " << largeF  << std::endl;
+        std::cout << "G: " << largeG  << std::endl;
+        std::cout << "T: " << largeT  << std::endl;
 
 
         double mass = (largeF.transpose().dot(largeG)) / (largeG.transpose().dot(largeG));
@@ -143,19 +149,20 @@ int main()
         for (int i = 0; i < gravity_XYZ.size(); i++) {
             Eigen::MatrixXd A_x(3, 3);
             A_x(0, 0) = 0;
-            A_x(0, 1) = gravity_XYZ[i][2];
-            A_x(0, 2) = -gravity_XYZ[i][1];
+            A_x(0, 1) = gravity_XYZ[i].z();
+            A_x(0, 2) = -gravity_XYZ[i].y();
 
-            A_x(1, 0) = -gravity_XYZ[i][2];
-            A_x(1, 1) = gravity_XYZ[i][0];
-            A_x(1, 2) = gravity_XYZ[i][2];
+            A_x(1, 0) = -gravity_XYZ[i].z();
+            A_x(1, 1) = 0;
+            A_x(1, 2) = gravity_XYZ[i].x();
 
-            A_x(2, 0) = gravity_XYZ[i][1];
-            A_x(2, 1) = -gravity_XYZ[i][0];
+            A_x(2, 0) = gravity_XYZ[i].y();
+            A_x(2, 1) = -gravity_XYZ[i].x();
             A_x(2, 2) = 0;
             largeA.block<3,3>(i*3, 0) = A_x;
 
         }
+
 
         // Calculate the product A^T * A
         auto ATA = largeA.transpose() * largeA;
@@ -163,19 +170,23 @@ int main()
         // Compute the pseudo-inverse of ATA
         auto ATA_pseudo_inv = pseudo_inverse(ATA);
 
+        auto product11 = largeA.transpose() * largeT;
+
         // Multiply by A^T and T, and scale by 1/mass
-        auto r = (1.0 / mass) * (ATA_pseudo_inv *(largeA.transpose()) * (largeT));
+        auto r = (1.0 / mass) * (ATA_pseudo_inv * product11);
 
         std::cout << "Center of Mass: " << r << std::endl;
 
 
 
-        // std::cout << "not mass: " << r  << std::endl;
+
 
 
     } catch (...) {
         std::cerr << "Error: Did not load doc" << std::endl;
     }
+
+
 
 
     return 0;
