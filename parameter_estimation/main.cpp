@@ -46,17 +46,7 @@ int main()
             std::cout << i << ": " << biasVector[i] << std::endl;
         }
 
-        //Create IMU and FTS vector and fill it
-        std::vector<std::vector<float>> imuVector(3);
-        std::vector<std::vector<float>> ftsVector(3);
 
-
-        for (int i = 6; i < imuVector.size(); i++) {
-            imuVector[i] = doc.GetColumn<float>(i);
-        }
-        for (int i = 9; i < ftsVector.size(); i++) {
-            ftsVector[i] = doc.GetColumn<float>(i);
-        }
 
         //Create rotation matrix of the FTS
         std::vector<std::vector<float>> r1x(3);
@@ -96,7 +86,62 @@ int main()
         */
 
 
-        std::cout << rotationMatrices[0] << std::endl;
+        //GRAVITY VECTOR [X, Y, Z]
+        ;  // This will store the transposed matrix
+        std::vector<Eigen::Vector3f> gravity_XYZ(24);
+        std::vector<std::vector<float>> gravityBuffer(3, std::vector<float>(24)); // 3 vectors each of size 24
+        std::vector<Eigen::VectorXf> G_I(24);  // Use RowVector3f to store transposed vector
+
+        for (int i = 0; i < gravityBuffer.size(); i++) {
+            gravityBuffer[i] = doc.GetColumn<float>(i+9);
+        }
+
+
+         for (int i = 0; i < 24; i++) {
+             for (int j = 0; j < 3; j ++){
+                 gravity_XYZ[i][j] = bufferVector[j][i];
+             }
+             G_I[i] = gravity_XYZ[i].transpose();  // TRANSPOSED IN ROW VECTOR
+         }
+
+        std::vector<Eigen::Vector3f> s_G_i(24);  // Change from Matrix3f to Vector3f
+
+        for (int i = 0; i < rotationMatrices.size(); i++) {
+            s_G_i[i] = rotationMatrices[i] * G_I[i];
+        }
+
+        Eigen::VectorXf largeF(72,1);
+        Eigen::VectorXf largeG(72,1);
+
+
+         for (int holyShit = 0; holyShit < 72; holyShit++) {
+             int ogga = 0;
+             int hehe;
+             if (holyShit < 24) {
+                 ogga = 0;
+                 hehe = 0;
+             }
+             else if ( holyShit < 48) {
+                 ogga = 1;
+                 hehe = 24;
+             }
+             else {
+                 ogga = 2;
+                 hehe = 48;
+             }
+             largeF[holyShit] = bufferVector[ogga][holyShit - hehe];
+             largeG[holyShit] = gravityBuffer[ogga][holyShit - hehe];
+         }
+
+
+
+
+        auto coolMass = (largeF.transpose() * largeG) / (largeG.transpose() * largeG);
+
+         std::cout << coolMass << std::endl;
+
+
+
     } catch (...) {
         std::cerr << "Error: Did not load doc" << std::endl;
     }
