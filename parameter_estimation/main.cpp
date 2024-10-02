@@ -42,9 +42,11 @@ int main()
         }
 
 
+        /*
         for (int i = 0; i < biasVector.size(); i++) {
             std::cout << i << ": " << biasVector[i] << std::endl;
         }
+        */
 
 
 
