@@ -14,25 +14,20 @@ class ParameterEstimation {
         rows_ = doc_.GetRowCount();
 
         mTable_ = Eigen::MatrixXd(rows_, cols_);
-        vTable_ = std::vector(cols_, std::vector<float>(rows_));
+        vTable_ = std::vector(cols_, std::vector<double>(rows_));
 
         for (int i = 0; i < cols_; i++) {
-            vTable_[i] = doc_.GetColumn<float>(i);
+            vTable_[i] = doc_.GetColumn<double>(i);
             for (int j = 0; j < rows_; j++) {
                 mTable_(j, i) = vTable_[i][j];
             }
         }
-        forceMatrix_ = mTable_(Eigen::all, Eigen::seq(0, 2));
-        torqueMatrix_ = mTable_(Eigen::all, Eigen::seq(3, 5));
+        initialize_();
+    }
 
-        forceBiasMatrix_ =  Eigen::MatrixX3d(1,3);
-        torqueBiasMatrix_ = Eigen::MatrixX3d(1,3);
-
-        F_ << mTable_.col(0), mTable_.col(1), mTable_.col(2);
-        G_ << mTable_.col(9), mTable_.col(10), mTable_.col(11);
-        massEstimate_ = G_.transpose().dot(F_) / G_.transpose().dot(G_);
-
-    };
+    Eigen::MatrixXd pseudo_inverse(const Eigen::MatrixXd &A) {
+        return A.completeOrthogonalDecomposition().pseudoInverse();
+    }
 
     Eigen::MatrixX3d getForceMatrix() {
         return forceMatrix_;
@@ -42,21 +37,21 @@ class ParameterEstimation {
         return torqueMatrix_;
     }
 
-    Eigen::MatrixX3d getForceBiasMatrix() {
+    Eigen::Vector3d getForceBiasMatrix() {
         for (int i = 0; i < 3; i++) {
-            forceBiasMatrix_(0, i) = forceMatrix_.col(i).mean();
+            forceBiasVector_(i) = forceMatrix_.col(i).mean();
         }
-        return forceBiasMatrix_;
+        return forceBiasVector_;
     }
 
-    Eigen::MatrixX3d getTorqueBiasMatrix() {
+    Eigen::Vector3d getTorqueBiasMatrix() {
         for (int i = 0; i < 3; i++) {
-            torqueBiasMatrix_(0, i) = torqueMatrix_.col(i).mean();
+            torqueBiasVector_(i) = torqueMatrix_.col(i).mean();
         }
-        return torqueBiasMatrix_;
+        return torqueBiasVector_;
     }
 
-    std::vector<Eigen::Matrix3d> GetRotationMatrices() {
+    std::vector<Eigen::Matrix3d> getRotationMatrices() {
         for (int i = 0; i < rows_; i++) {
             Eigen::MatrixXd rotationMatrix = mTable_(i, Eigen::seq(12, 20));
             Eigen::Matrix3d a;
@@ -76,23 +71,64 @@ class ParameterEstimation {
         return G_;
     }
 
+    Eigen::Vector<double, 72> getTorqeVector() {
+        return T_;
+    }
+
     double getMassEstimate() {
         return massEstimate_;
     }
 
+    Eigen::Vector3d getCenterMassVector() {
+        Eigen::Vector<double, 72> T;
+        for (int i = 0; i < 24; i++) {
+            T.segment<3>(i * 3) << mTable_(i,3), mTable_(i,4), mTable_(i,5);
+        }
+        Eigen::MatrixXd A(72,3);
+        for (int i = 0; i < 24; i++) {
+            Eigen::MatrixXd A_i{
+                {0,mTable_(i,11),-mTable_(i,10)},
+                {-mTable_(i,11),0,mTable_(i,9)},
+                {mTable_(i,10),-mTable_(i,9),0}
+            };
+            A.block<3,3>(i*3, 0) = A_i;
+        }
+        auto ATA_inv = pseudo_inverse(A.transpose()*A);
+        auto l = A.transpose()*T;
+        auto mat = ATA_inv*l;
+        auto r = 1.0 / massEstimate_*mat;
+        return r;
+    }
+
 private:
+    void initialize_() {
+        forceMatrix_ = mTable_(Eigen::all, Eigen::seq(0, 2));
+        torqueMatrix_ = mTable_(Eigen::all, Eigen::seq(3, 5));
+
+        forceBiasVector_ =  Eigen::Vector3d(0,0,0);
+        torqueBiasVector_ = Eigen::Vector3d(0,0,0);
+
+        F_ << mTable_.col(0), mTable_.col(1), mTable_.col(2);
+        G_ << mTable_.col(9), mTable_.col(10), mTable_.col(11);
+        T_ << mTable_.col(3), mTable_.col(4), mTable_.col(5);
+        A_ = Eigen::MatrixX3d(rows_,3);
+        massEstimate_ = G_.transpose().dot(F_) / G_.transpose().dot(G_);
+    }
+
     rapidcsv::Document doc_;
     Eigen::MatrixXd mTable_;
-    std::vector<std::vector<float>> vTable_;
+    std::vector<std::vector<double>> vTable_;
 
     Eigen::MatrixX3d forceMatrix_;
     Eigen::MatrixX3d torqueMatrix_;
-    Eigen::MatrixX3d forceBiasMatrix_;
-    Eigen::MatrixX3d torqueBiasMatrix_;
+    Eigen::Vector3d forceBiasVector_;
+    Eigen::Vector3d torqueBiasVector_;
+    Eigen::MatrixX3d A_;
     std::vector<Eigen::Matrix3d> rotationMatrices_;
 
     Eigen::Vector<double, 72> F_;
     Eigen::Vector<double, 72> G_;
+    Eigen::Vector<double, 72> T_;
     double massEstimate_;
 
     int rows_;
