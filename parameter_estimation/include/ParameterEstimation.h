@@ -63,6 +63,17 @@ class ParameterEstimation {
         return rotationMatrices_;
     }
 
+    Eigen::MatrixXd getLargeR() {
+        int num_matrices = rotationMatrices_.size();
+
+        Eigen::MatrixXd r(num_matrices * 3, 3);
+
+        for (int i = 0; i < num_matrices; ++i) {
+            r.block<3, 3>(i * 3, 0) = rotationMatrices_[i];
+        }
+        return r;
+    }
+
     Eigen::Vector<double, 72> getForceVector() {
         return F_;
     }
@@ -87,8 +98,8 @@ class ParameterEstimation {
         Eigen::MatrixXd A(72,3);
         for (int i = 0; i < 24; i++) {
             Eigen::MatrixXd A_i{
-                {0,mTable_(i,11),-mTable_(i,10)},
-                {-mTable_(i,11),0,mTable_(i,9)},
+                {0 ,mTable_(i,11), -mTable_(i,10)},
+                {-mTable_(i,11), 0,mTable_(i,9)},
                 {mTable_(i,10),-mTable_(i,9),0}
             };
             A.block<3,3>(i*3, 0) = A_i;
@@ -99,6 +110,13 @@ class ParameterEstimation {
         auto r = 1.0 / massEstimate_*mat;
         return r;
     }
+
+    /*Eigen::Vector3d getEstimationMass() {
+        double = massEstimate_*
+
+
+        return 0;
+    }*/
 
 private:
     void initialize_() {
@@ -125,6 +143,7 @@ private:
     Eigen::Vector3d torqueBiasVector_;
     Eigen::MatrixX3d A_;
     std::vector<Eigen::Matrix3d> rotationMatrices_;
+    Eigen::MatrixXd largeR;
 
     Eigen::Vector<double, 72> F_;
     Eigen::Vector<double, 72> G_;

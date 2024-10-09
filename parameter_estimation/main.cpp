@@ -10,9 +10,9 @@ int main() {
     ParameterEstimation param(doc);
     /*
     std::cout << "CLASS: " << param.getForceBiasMatrix() << std::endl;
-    std::cout << "CLASS: " << param.getTorqueBiasMatrix() << std::endl;
+    std::cout << "CLASS: " << param.getTorqueBiasMatrix() << std::endl;*/
     std::cout << "CLASS: " << param.getMassEstimate() << std::endl;
-    */
+
     std::cout << "CLASS: " << param.getCenterMassVector() << std::endl;
 
     return 0;
