@@ -53,6 +53,17 @@ class ParameterEstimation {
         return rotationMatrices_;
     }
 
+    Eigen::MatrixXd getLargeR() {
+        int num_matrices = rotationMatrices_.size();
+
+        Eigen::MatrixXd r(num_matrices * 3, 3);
+
+        for (int i = 0; i < num_matrices; ++i) {
+            r.block<3, 3>(i * 3, 0) = rotationMatrices_[i];
+        }
+        return r;
+    }
+
     Eigen::Vector<double, 72> getForceVector() {
         return F_;
     }
@@ -143,6 +154,7 @@ private:
     Eigen::Vector3d imuBiasVector_;
     Eigen::MatrixX3d A_;
     std::vector<Eigen::Matrix3d> rotationMatrices_;
+    Eigen::MatrixXd largeR;
 
     Eigen::Vector<double, 72> F_;
     Eigen::Vector<double, 72> G_;
