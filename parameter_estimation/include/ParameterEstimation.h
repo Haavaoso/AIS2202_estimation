@@ -29,26 +29,16 @@ class ParameterEstimation {
         return A.completeOrthogonalDecomposition().pseudoInverse();
     }
 
-    Eigen::MatrixX3d getForceMatrix() {
-        return forceMatrix_;
-    }
-
-    Eigen::MatrixX3d getTorqueMatrix() {
-        return torqueMatrix_;
-    }
-
     Eigen::Vector3d getForceBiasMatrix() {
-        for (int i = 0; i < 3; i++) {
-            forceBiasVector_(i) = forceMatrix_.col(i).mean();
-        }
         return forceBiasVector_;
     }
 
     Eigen::Vector3d getTorqueBiasMatrix() {
-        for (int i = 0; i < 3; i++) {
-            torqueBiasVector_(i) = torqueMatrix_.col(i).mean();
-        }
         return torqueBiasVector_;
+    }
+
+    Eigen::Vector3d getImuBiasMatrix() {
+        return imuBiasVector_;
     }
 
     std::vector<Eigen::Matrix3d> getRotationMatrices() {
@@ -82,14 +72,15 @@ class ParameterEstimation {
     Eigen::Vector3d getCenterMassVector() {
         Eigen::Vector<double, 72> T;
         for (int i = 0; i < 24; i++) {
-            T.segment<3>(i * 3) << mTable_(i,3), mTable_(i,4), mTable_(i,5);
+            T.segment<3>(i * 3) << T_(i), T_(i+24), T_(i+24*2);
         }
+
         Eigen::MatrixXd A(72,3);
         for (int i = 0; i < 24; i++) {
             Eigen::MatrixXd A_i{
-                {0,mTable_(i,11),-mTable_(i,10)},
-                {-mTable_(i,11),0,mTable_(i,9)},
-                {mTable_(i,10),-mTable_(i,9),0}
+                {0,G_(i+24*2),-G_(i)},
+                {-G_(i+24*2),0,G_(i)},
+                {G_(i+24),-G_(i),0}
             };
             A.block<3,3>(i*3, 0) = A_i;
         }
@@ -104,13 +95,38 @@ private:
     void initialize_() {
         forceMatrix_ = mTable_(Eigen::all, Eigen::seq(0, 2));
         torqueMatrix_ = mTable_(Eigen::all, Eigen::seq(3, 5));
+        imuMatrix_ = mTable_(Eigen::all, Eigen::seq(6, 8));
 
         forceBiasVector_ =  Eigen::Vector3d(0,0,0);
-        torqueBiasVector_ = Eigen::Vector3d(0,0,0);
+        for (int i = 0; i < 3; i++) {
+            forceBiasVector_(i) = forceMatrix_.col(i).mean();
+        }
 
-        F_ << mTable_.col(0), mTable_.col(1), mTable_.col(2);
-        G_ << mTable_.col(9), mTable_.col(10), mTable_.col(11);
-        T_ << mTable_.col(3), mTable_.col(4), mTable_.col(5);
+        torqueBiasVector_ = Eigen::Vector3d(0,0,0);
+        for (int i = 0; i < 3; i++) {
+            torqueBiasVector_(i) = torqueMatrix_(Eigen::seq(i*8,i*8+7),0).mean();
+        }
+
+        imuBiasVector_ = Eigen::Vector3d(0,0,0);
+        for (int i = 0; i < 3; i++) {
+            imuBiasVector_(i) = imuMatrix_.col(i).mean();
+        }
+
+        F_ << forceMatrix_.col(0) - Eigen::VectorXd::Constant(forceMatrix_.rows(), forceBiasVector_(0)),
+        forceMatrix_.col(1) - Eigen::VectorXd::Constant(forceMatrix_.rows(), forceBiasVector_(1)),
+        forceMatrix_.col(2) - Eigen::VectorXd::Constant(forceMatrix_.rows(), forceBiasVector_(2));
+
+        T_ << torqueMatrix_.col(0) - Eigen::VectorXd::Constant(torqueMatrix_.rows(), torqueBiasVector_(0)),
+        torqueMatrix_.col(1) - Eigen::VectorXd::Constant(torqueMatrix_.rows(), torqueBiasVector_(1)),
+        torqueMatrix_.col(2) - Eigen::VectorXd::Constant(torqueMatrix_.rows(), torqueBiasVector_(2));
+
+        G_ << imuMatrix_.col(0) - Eigen::VectorXd::Constant(imuMatrix_.rows(), imuBiasVector_(0)),
+        imuMatrix_.col(1) - Eigen::VectorXd::Constant(imuMatrix_.rows(), imuBiasVector_(1)),
+        imuMatrix_.col(2) - Eigen::VectorXd::Constant(imuMatrix_.rows(), imuBiasVector_(2));
+
+        //F_ << mTable_.col(0), mTable_.col(1), mTable_.col(2);
+        //G_ << mTable_.col(9), mTable_.col(10), mTable_.col(11);
+        //T_ << mTable_.col(3), mTable_.col(4), mTable_.col(5);
         A_ = Eigen::MatrixX3d(rows_,3);
         massEstimate_ = G_.transpose().dot(F_) / G_.transpose().dot(G_);
     }
@@ -121,8 +137,10 @@ private:
 
     Eigen::MatrixX3d forceMatrix_;
     Eigen::MatrixX3d torqueMatrix_;
+    Eigen::MatrixX3d imuMatrix_;
     Eigen::Vector3d forceBiasVector_;
     Eigen::Vector3d torqueBiasVector_;
+    Eigen::Vector3d imuBiasVector_;
     Eigen::MatrixX3d A_;
     std::vector<Eigen::Matrix3d> rotationMatrices_;
 
