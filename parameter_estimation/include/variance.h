@@ -14,14 +14,14 @@ double variance(rapidcsv::Document doc, int row_) {
     for (int i = 0; i < data.size(); i++) {
         mu_i += data[i];
     }
-    mean = 1/data.size() * mu_i;
 
+    mean = (1.0f/data.size()) * mu_i;
     double sum{};
     double var{};
     for (int i = 0; i < data.size(); i++) {
-        sum += ((mu_i - data[i])*(mu_i - data[i]));
+        sum += ((data[i]-mean)*(data[i] - mean));
     }
-    var = 1/data.size() * sum;
+    var = 1.0f/data.size() * sum;
     return var;
 }
 

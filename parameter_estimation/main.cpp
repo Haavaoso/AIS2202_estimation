@@ -25,20 +25,21 @@ int main() {
 
     rapidcsv::Document doc0("../dataset/0-steady-state_accel.csv");
     rapidcsv::Document doc1("../dataset/0-steady-state_wrench.csv");
+    std::vector<double> varF(3);
+    std::vector<double> varT(3);
+    std::vector<double> varA(3);
 
 //NOE SKJER HÆR
     {
-        double varFx = variance(doc1, 0);
-        double varFy = variance(doc1, 1);
-        double varFz = variance(doc1, 2);
-
-        double varTx = variance(doc1, 3);
-        double varTy = variance(doc1, 4);
-        double varTz = variance(doc1, 5);
-
-        double varAx = variance(doc0, 0);
-        double varAy = variance(doc0, 1);
-        double varAz = variance(doc0, 2);
+        varF[0] = variance(doc1, 0);
+        varF[1] = variance(doc1, 1);
+        varF[2] = variance(doc1, 2);
+        varT[0] = variance(doc1, 3);
+        varT[1] = variance(doc1, 4);
+        varT[2] = variance(doc1, 5);
+        varA[0] = variance(doc0, 0);
+        varA[1] = variance(doc0, 1);
+        varA[2] = variance(doc0, 2);
         std::cout << "Check" << std::endl;
     }
 
@@ -53,9 +54,7 @@ int main() {
 
 
 
-    Fusion fusion(param.getMassEstimate(), param.getCenterMassVector());
-
-
+    Fusion fusion(param.getMassEstimate(), param.getCenterMassVector(), varF, varT, varA);
 
     // Process the experiment data through the Fusion class
     fusion.insertData(doc_accel_data, doc_wrench_data, doc_orientation_data);

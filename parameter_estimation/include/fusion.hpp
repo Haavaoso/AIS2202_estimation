@@ -12,8 +12,8 @@
 using namespace Eigen;
 class Fusion {
 public:
-    Fusion(double mass, Vector3d r)
-        : mass_(mass), mass_center_(std::move(r)){
+    Fusion(double mass, Vector3d r, std::vector<double> F, std::vector<double> T, std::vector<double> A)
+        : mass_(mass), mass_center_(std::move(r)), varF_(F), varT_(T), varA_(A) {
     }
 
 
@@ -80,20 +80,23 @@ public:
         Q_.block<3, 3>(6, 6) = mass_ * fuck_trippel_trumf *  Matrix3d::Identity(3, 3);
 
         std::cout << "Rimming?" << std::endl;
-        Q_ = time_step_ * Q_ * 1;
+        Q_ = time_step_ * Q_ * sigmak_;
         //std::cout << Q_;
 
 
 
         H_f_.block<3, 3>(0,3) = MatrixXd::Identity(3, 3); //BØR ETTERSEES
         H_f_.block<3, 3>(3,6) = MatrixXd::Identity(3, 3);
-        //std::cout << H_f_ << std::endl;
 
 
         H_a_.block<3, 3>(0, 0) = MatrixXd::Identity(3, 3); //BØR ETTERSEES
-        //std::cout << H_a_ << std::endl;
+        std::cout << H_a_ << std::endl;
+        std::cout << H_f_ << std::endl;
 
 
+
+
+        std::cout << varF_[0] << " " << varF_[1] << " " << varF_[2] << std::endl;
 
 
 
@@ -118,10 +121,14 @@ private:
     std::vector<Matrix3d> B_;  // Control input matrix
     MatrixXd Q_ = MatrixXd::Zero(9, 9);  // Process noise covariance
     MatrixXd R_f;  // FTS measurement noise covariance
-    MatrixXd R_a;  // IMU measurement noise covariance
-    MatrixXd H_f_ = MatrixXd::Zero(9, 9);  // FTS output matrix
-    MatrixXd H_a_ = MatrixXd::Zero(9, 9);  // IMU output matrix
+    MatrixXd R_a_;  // IMU measurement noise covariance
+    MatrixXd H_f_ = MatrixXd::Zero(6, 9);  // FTS output matrix
+    MatrixXd H_a_ = MatrixXd::Zero(3, 9);  // IMU output matrix
 
+    double sigmak_ = 0.5;
+    std::vector<double> varF_;
+    std::vector<double> varT_;
+    std::vector<double> varA_;
 
     std::vector<std::vector<double>> accel_data_{};
     std::vector<std::vector<double>> wrench_data_{};
