@@ -8,6 +8,7 @@ add_executable(parameter_estimation main.cpp)
 target_link_libraries(parameter_estimation PUBLIC Eigen3::Eigen)
 
 # Include rapidcsv headers
-target_include_directories(parameter_estimation PRIVATE ${RAPIDCSV_INCLUDE_DIRS})
+target_include_directories(parameter_estimation PRIVATE ${RAPIDCSV_INCLUDE_DIRS})# ${matplotlibcpp_SOURCE_DIR})
+#target_link_libraries(parameter_estimation PRIVATE Python3::Python Python3::NumPy)
 
 

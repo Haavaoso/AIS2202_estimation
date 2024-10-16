@@ -3,6 +3,17 @@ project(AIS4104-assignments)
 
 set(CMAKE_CXX_STANDARD 20)
 
+
+find_package(Python3 COMPONENTS Interpreter Development NumPy REQUIRED)
+
+include(FetchContent)
+FetchContent_Declare(
+        matplotlibcpp
+        GIT_REPOSITORY https://github.com/lava/matplotlib-cpp.git
+        1121c8a1328324923f36ab0df9537e2849f41a87
+)
+FetchContent_MakeAvailable(matplotlibcpp)
+
 # Find the rapidcsv header file path
 find_path(RAPIDCSV_INCLUDE_DIRS
         NAMES rapidcsv.h
