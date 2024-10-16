@@ -40,44 +40,5 @@ int main() {
     double varAy = variance(doc0, 1);
     double varAz = variance(doc0, 2);
 
-
-
-
-
-
-    // Helper function to read CSV (assumed CSV reader is available or implemented)
-    std::vector<Eigen::Vector3d> readAccelData(const std::string& filename);
-    std::vector<Eigen::VectorXd> readWrenchData(const std::string& filename);
-    std::vector<Eigen::Vector3d> readOrientationData(const std::string& filename);
-
-
-    // Define your system's mass and inertia (example values)
-
-    Eigen::Vector3d inertia(0.1, 0.1, 0.1);  // Example inertia tensor values
-
-    Fusion fusion(mass, inertia);
-
-
-
-
-    std::vector<Eigen::Vector3d> accel_data = readAccelData("1-baseline_accel.csv");
-    std::vector<Eigen::VectorXd> wrench_data = readWrenchData("1-baseline_wrench.csv");
-    std::vector<Eigen::Vector3d> orientation_data = readOrientationData("1-baseline_orientation.csv");
-
-
-    for (int i = 1; i << accel_data.size(); i++) {
-
-
-    }
-    // Process the experiment data through the Fusion class
-    fusion.processExperimentData(accel_data, wrench_data, orientation_data);
-
-    // You can now use the state estimate `fusion.x` for further processing
-
-
-
-
-
-
     return 0;
 }
