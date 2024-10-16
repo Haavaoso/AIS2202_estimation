@@ -20,7 +20,7 @@ int main() {
     std::cout << "massEstimate: " <<"\n" << param.getMassEstimate() << std::endl;
     std::cout << "centerMassEstimate: " <<"\n" << param.getCenterMassVector() << std::endl;
 
-
+    double lol = param.getMassEstimate();
 
 
 
@@ -46,19 +46,16 @@ int main() {
 
 
 
-    // Helper function to read CSV (assumed CSV reader is available or implemented)
-    std::vector<Eigen::Vector3d> readAccelData(const std::string& filename);
-    std::vector<Eigen::VectorXd> readWrenchData(const std::string& filename);
-    std::vector<Eigen::Vector3d> readOrientationData(const std::string& filename);
-
     rapidcsv::Document doc_accel_data("../dataset/1-baseline_accel.csv");
     rapidcsv::Document doc_wrench_data("../dataset/1-baseline_wrench.csv");
     rapidcsv::Document doc_orientation_data("../dataset/1-baseline_orientation.csv");
+    std::cout << "Check" << std::endl;
 
 
 
-    Fusion fusion(param.getMassEstimate());
+    Fusion fusion(lol);
 
+    std::cout << "Check" << std::endl;
 
 
     // Process the experiment data through the Fusion class

@@ -21,9 +21,14 @@ public:
         const rapidcsv::Document& wrench,
         const rapidcsv::Document& orientation) {
 
-        accel_data_ = std::vector(accel.GetColumnCount(), std::vector<double>(accel.GetRowCount()));
+        /*accel_data_ = std::vector(accel.GetColumnCount(), std::vector<double>(accel.GetRowCount()));
         wrench_data_ = std::vector(wrench.GetColumnCount(), std::vector<double>(wrench.GetRowCount()));
-        orientation_data_ = std::vector(orientation.GetColumnCount(), std::vector<double>(orientation.GetRowCount()));
+        orientation_data_ = std::vector(orientation.GetColumnCount(), std::vector<double>(orientation.GetRowCount()));*/
+
+        accel_data_ = std::vector<std::vector<double>>(accel.GetColumnCount(), std::vector<double>(accel.GetRowCount()));
+        wrench_data_ = std::vector<std::vector<double>>(wrench.GetColumnCount(), std::vector<double>(wrench.GetRowCount()));
+        orientation_data_ = std::vector<std::vector<double>>(orientation.GetColumnCount(), std::vector<double>(orientation.GetRowCount()));
+
 
         for (int i = 0; i < accel.GetColumnCount(); i++) {
             accel_data_[i] = accel.GetColumn<double>(i);
@@ -48,6 +53,8 @@ private:
     MatrixXd R_a;  // IMU measurement noise covariance
     MatrixXd H_f;  // FTS output matrix
     MatrixXd H_a;  // IMU output matrix
+
+
     std::vector<std::vector<double>> accel_data_{};
     std::vector<std::vector<double>> wrench_data_{};
     std::vector<std::vector<double>> orientation_data_{};
