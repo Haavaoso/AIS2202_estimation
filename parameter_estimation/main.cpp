@@ -23,23 +23,22 @@ int main() {
 
 
 
+//Noe skjer hær
+    {
+        rapidcsv::Document doc0("../dataset/0-steady-state_accel.csv");
+        rapidcsv::Document doc1("../dataset/0-steady-state_wrench.csv");
+        double varFx = variance(doc1, 0);
+        double varFy = variance(doc1, 1);
+        double varFz = variance(doc1, 2);
+        double varTx = variance(doc1, 3);
+        double varTy = variance(doc1, 4);
+        double varTz = variance(doc1, 5);
 
-    rapidcsv::Document doc0("../dataset/0-steady-state_accel.csv");
-    rapidcsv::Document doc1("../dataset/0-steady-state_wrench.csv");
-
-
-
-    double varFx = variance(doc1, 0);
-    double varFy = variance(doc1, 1);
-    double varFz = variance(doc1, 2);
-    double varTx = variance(doc1, 3);
-    double varTy = variance(doc1, 4);
-    double varTz = variance(doc1, 5);
-
-    double varAx = variance(doc0, 0);
-    double varAy = variance(doc0, 1);
-    double varAz = variance(doc0, 2);
-
+        double varAx = variance(doc0, 0);
+        double varAy = variance(doc0, 1);
+        double varAz = variance(doc0, 2);
+        std::cout << "Check" << std::endl;
+    }
 
 
 
@@ -50,31 +49,17 @@ int main() {
     std::vector<Eigen::VectorXd> readWrenchData(const std::string& filename);
     std::vector<Eigen::Vector3d> readOrientationData(const std::string& filename);
 
-
-    // Define your system's mass and inertia (example values)
-
-    Eigen::Vector3d inertia(0.1, 0.1, 0.1);  // Example inertia tensor values
-
-    Fusion fusion(mass, inertia);
+    rapidcsv::Document doc_accel_data("../dataset/1-baseline_accel.csv");
+    rapidcsv::Document doc_wrench_data("../dataset/1-baseline_wrench.csv");
+    rapidcsv::Document doc_orientation_data("../dataset/1-baseline_orientation.csv");
 
 
 
-
-    std::vector<Eigen::Vector3d> accel_data = readAccelData("1-baseline_accel.csv");
-    std::vector<Eigen::VectorXd> wrench_data = readWrenchData("1-baseline_wrench.csv");
-    std::vector<Eigen::Vector3d> orientation_data = readOrientationData("1-baseline_orientation.csv");
+    Fusion fusion(param.getMassEstimate());
 
 
-    for (int i = 1; i << accel_data.size(); i++) {
-
-
-    }
     // Process the experiment data through the Fusion class
-    fusion.processExperimentData(accel_data, wrench_data, orientation_data);
-
-    // You can now use the state estimate `fusion.x` for further processing
-
-
+    fusion.insertData(doc_accel_data, doc_wrench_data, doc_orientation_data);
 
 
 

@@ -17,9 +17,23 @@ public:
 
 
     // Process experiment data: accelerometer, wrench, orientation
-    void insertData(const std::vector<Vector3d>& accel_data,
-                               const std::vector<VectorXd>& wrench_data,
-                               const std::vector<Vector3d>& orientation_data) {
+    void insertData(const rapidcsv::Document& accel,
+        const rapidcsv::Document& wrench,
+        const rapidcsv::Document& orientation) {
+
+        accel_data_ = std::vector(accel.GetColumnCount(), std::vector<double>(accel.GetRowCount()));
+        wrench_data_ = std::vector(wrench.GetColumnCount(), std::vector<double>(wrench.GetRowCount()));
+        orientation_data_ = std::vector(orientation.GetColumnCount(), std::vector<double>(orientation.GetRowCount()));
+
+        for (int i = 0; i < accel.GetColumnCount(); i++) {
+            accel_data_[i] = accel.GetColumn<double>(i);
+        }
+        for (int i = 0; i < wrench.GetColumnCount(); i++) {
+            wrench_data_[i] = wrench.GetColumn<double>(i);
+        }
+        for (int i = 0; i < orientation.GetColumnCount(); i++) {
+            orientation_data_[i] = orientation.GetColumn<double>(i);
+        }
     }
 
 private:
@@ -34,7 +48,9 @@ private:
     MatrixXd R_a;  // IMU measurement noise covariance
     MatrixXd H_f;  // FTS output matrix
     MatrixXd H_a;  // IMU output matrix
-
+    std::vector<std::vector<double>> accel_data_{};
+    std::vector<std::vector<double>> wrench_data_{};
+    std::vector<std::vector<double>> orientation_data_{};
 };
 
 
