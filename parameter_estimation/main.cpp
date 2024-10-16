@@ -60,6 +60,7 @@ int main() {
     Fusion fusion(param.getMassEstimate());
 
 
+
     // Process the experiment data through the Fusion class
     fusion.insertData(doc_accel_data, doc_wrench_data, doc_orientation_data);
 
