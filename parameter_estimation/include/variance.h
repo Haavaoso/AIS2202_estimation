@@ -19,7 +19,7 @@ double variance(rapidcsv::Document doc, int row_) {
     double sum{};
     double var{};
     for (int i = 0; i < data.size(); i++) {
-        sum += (mu_i * data[i])(mu_i * data[i]);
+        sum += ((mu_i - data[i])*(mu_i - data[i]));
     }
     var = 1/data.size() * sum;
     return var;
