@@ -20,7 +20,6 @@ int main() {
     std::cout << "massEstimate: " <<"\n" << param.getMassEstimate() << std::endl;
     std::cout << "centerMassEstimate: " <<"\n" << param.getCenterMassVector() << std::endl;
 
-    double lol = param.getMassEstimate();
 
 
 
@@ -32,6 +31,7 @@ int main() {
         double varFx = variance(doc1, 0);
         double varFy = variance(doc1, 1);
         double varFz = variance(doc1, 2);
+
         double varTx = variance(doc1, 3);
         double varTy = variance(doc1, 4);
         double varTz = variance(doc1, 5);
@@ -47,21 +47,22 @@ int main() {
 
 
     rapidcsv::Document doc_accel_data("../dataset/1-baseline_accel.csv");
+    // std::cout << doc_accel_data.GetColumn<double>(0)[0] << std::endl;
     rapidcsv::Document doc_wrench_data("../dataset/1-baseline_wrench.csv");
-    rapidcsv::Document doc_orientation_data("../dataset/1-baseline_orientation.csv");
-    std::cout << "Check" << std::endl;
+    rapidcsv::Document doc_orientation_data("../dataset/1-baseline_orientations.csv");
 
 
 
-    Fusion fusion(lol);
+    Fusion fusion(param.getMassEstimate(), param.getCenterMassVector());
 
-    std::cout << "Check" << std::endl;
 
 
     // Process the experiment data through the Fusion class
     fusion.insertData(doc_accel_data, doc_wrench_data, doc_orientation_data);
 
+    std::cout << "snack" << std::endl;
 
+    fusion.updateMatrix(1);
 
 
     return 0;
