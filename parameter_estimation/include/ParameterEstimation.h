@@ -72,7 +72,7 @@ class ParameterEstimation {
         return G_;
     }
 
-    Eigen::Vector<double, 72> getTorqeVector() {
+    Eigen::Vector<double, 72> getTorqueVector() {
         return T_;
     }
 
@@ -89,12 +89,13 @@ class ParameterEstimation {
         Eigen::MatrixXd A(72,3);
         for (int i = 0; i < 24; i++) {
             Eigen::MatrixXd A_i{
-                {0,G_(i+24*2),-G_(i)},
-                {-G_(i+24*2),0,G_(i)},
-                {G_(i+24),-G_(i),0}
+                {0,G1_(i+24*2),-G1_(i+24)},
+                {-G1_(i+24*2),0,G1_(i)},
+                {G1_(i+24),-G1_(i),0}
             };
             A.block<3,3>(i*3, 0) = A_i;
         }
+
         auto ATA_inv = pseudo_inverse(A.transpose()*A);
         auto l = A.transpose()*T;
         auto mat = ATA_inv*l;
@@ -115,7 +116,7 @@ private:
 
         torqueBiasVector_ = Eigen::Vector3d(0,0,0);
         for (int i = 0; i < 3; i++) {
-            torqueBiasVector_(i) = torqueMatrix_(Eigen::seq(i*8,i*8+7),0).mean();
+            torqueBiasVector_(i) = torqueMatrix_(Eigen::seq(i*8,i*8+7),i).mean();
         }
 
         imuBiasVector_ = Eigen::Vector3d(0,0,0);
@@ -135,11 +136,12 @@ private:
         imuMatrix_.col(1) - Eigen::VectorXd::Constant(imuMatrix_.rows(), imuBiasVector_(1)),
         imuMatrix_.col(2) - Eigen::VectorXd::Constant(imuMatrix_.rows(), imuBiasVector_(2));
 
-        //F_ << mTable_.col(0), mTable_.col(1), mTable_.col(2);
-        //G_ << mTable_.col(9), mTable_.col(10), mTable_.col(11);
-        //T_ << mTable_.col(3), mTable_.col(4), mTable_.col(5);
+        Eigen::Vector<double, 72> F1_;
+        F1_ << mTable_.col(0), mTable_.col(1), mTable_.col(2);
+        G1_ << mTable_.col(9), mTable_.col(10), mTable_.col(11);
+        T1_ << mTable_.col(3), mTable_.col(4), mTable_.col(5);
         A_ = Eigen::MatrixX3d(rows_,3);
-        massEstimate_ = G_.transpose().dot(F_) / G_.transpose().dot(G_);
+        massEstimate_ = G1_.transpose().dot(F_) / G1_.transpose().dot(G1_);
     }
 
     rapidcsv::Document doc_;
@@ -158,7 +160,9 @@ private:
 
     Eigen::Vector<double, 72> F_;
     Eigen::Vector<double, 72> G_;
+    Eigen::Vector<double, 72> G1_;
     Eigen::Vector<double, 72> T_;
+    Eigen::Vector<double, 72> T1_;
     double massEstimate_;
 
     int rows_;
