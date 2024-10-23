@@ -10,22 +10,43 @@
 int main() {
     rapidcsv::Document biasDoc("../dataset/0-calibration_fts-accel.csv");
 
-    rapidcsv::Document accel("../dataset/1-baseline_accel.csv");
-    rapidcsv::Document orientations("../dataset/1-baseline_accel.csv");
-    rapidcsv::Document wrench("../dataset/1-baseline_accel.csv");
+    rapidcsv::Document documentAccel("../dataset/1-baseline_accel.csv");
+    rapidcsv::Document documentOrientations("../dataset/1-baseline_accel.csv");
+    rapidcsv::Document documentWrench("../dataset/1-baseline_accel.csv");
 
     ParameterEstimation parameter_estimation(biasDoc);
-
-    kalman_filter kalman_filter();
 
     auto forceBias = parameter_estimation.getForceBiasVector();
     auto torqueBias = parameter_estimation.getTorqueVector();
     auto massEstimate = parameter_estimation.getMassEstimate();
     auto centerMassEstimate = parameter_estimation.getCenterMassVector();
 
-    for (int i = 0; i < accel.GetRowCount(); i++) {
+    std::vector<double> varForce(3);
+    std::vector<double> varTorque(3);
+    std::vector<double> varAccel(3);
+
+    //NOE SKJER HÆR
+    {
+        varForce[0] = variance(documentWrench, 0);
+        varForce[1] = variance(documentWrench, 1);
+        varForce[2] = variance(documentWrench, 2);
+        varTorque[0] = variance(documentWrench, 3);
+        varTorque[1] = variance(documentWrench, 4);
+        varTorque[2] = variance(documentWrench, 5);
+        varAccel[0] = variance(documentAccel, 0);
+        varAccel[1] = variance(documentAccel, 1);
+        varAccel[2] = variance(documentAccel, 2);
+        std::cout << "Check" << std::endl;
+    }
+
+    Fusion fusion(massEstimate,centerMassEstimate,varForce,varTorque,varAccel);
+
+    /*kalman_filter kalman_filter();
+
+    for (int i = 0; i < documentAccel.GetRowCount(); i++) {
         kalman_filter().predict();
         kalman_filter().update(z);
     }
+    */
 }
 
