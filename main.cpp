@@ -16,14 +16,16 @@ int main() {
 
     ParameterEstimation parameter_estimation(biasDoc);
 
+    kalman_filter kalman_filter();
+
     auto forceBias = parameter_estimation.getForceBiasVector();
     auto torqueBias = parameter_estimation.getTorqueVector();
     auto massEstimate = parameter_estimation.getMassEstimate();
     auto centerMassEstimate = parameter_estimation.getCenterMassVector();
 
-
     for (int i = 0; i < accel.GetRowCount(); i++) {
-
+        kalman_filter().predict();
+        kalman_filter().update(z);
     }
 }
 

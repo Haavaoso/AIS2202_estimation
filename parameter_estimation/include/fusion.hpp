@@ -15,6 +15,23 @@ class Fusion {
 public:
     Fusion(double mass, Vector3d r, std::vector<double> F, std::vector<double> T, std::vector<double> A)
         : mass_(mass), mass_center_(std::move(r)), varF_(F), varT_(T), varA_(A) {
+
+        A_ = MatrixXd::Identity(9, 9);
+
+        B_.resize(3);
+
+        B_[0] = MatrixXd::Identity(3, 3);
+
+        B_[1] = mass_ * MatrixXd::Identity(3, 3);
+        B_[2] = mass_ * skewSymmetric(mass_center_);
+
+        Q_base_matrix_.block<3, 3>(0, 0) = MatrixXd::Identity(3, 3);
+
+        Q_base_matrix_.block<3, 3>(3, 3) = mass_ * Matrix3d::Identity(3, 3);
+
+        double fuck_trippel_trumf = sqrt(mass_center_[0]*mass_center_[0] + mass_center_[1]*mass_center_[1] + mass_center_[2]*mass_center_[2]);
+
+        Q_base_matrix_.block<3, 3>(6, 6) = mass_ * fuck_trippel_trumf *  Matrix3d::Identity(3, 3);
     }
 
 
@@ -57,34 +74,9 @@ public:
 
 
     void updateMatrix(int i) {
-
-        A_ = MatrixXd::Identity(9, 9);
-
-        B_.resize(3);
-
-        B_[0] = MatrixXd::Identity(3, 3);
-
-        B_[1] = mass_ * MatrixXd::Identity(3, 3);
-        B_[2] = mass_ * skewSymmetric(mass_center_);
         time_step_ = accel_data_[0][i] - prev_time_;
 
-        std::cout << "Liker" << std::endl;
-
-        Q_.block<3, 3>(0, 0) = MatrixXd::Identity(3, 3);
-        std::cout << "du?" << std::endl;
-
-        Q_.block<3, 3>(3, 3) = mass_ * Matrix3d::Identity(3, 3);
-        std::cout << "Du" << std::endl;
-
-        double fuck_trippel_trumf = sqrt(mass_center_[0]*mass_center_[0] + mass_center_[1]*mass_center_[1] + mass_center_[2]*mass_center_[2]);
-
-        Q_.block<3, 3>(6, 6) = mass_ * fuck_trippel_trumf *  Matrix3d::Identity(3, 3);
-
-        std::cout << "Rimming?" << std::endl;
-        Q_ = time_step_ * Q_ * sigmak_;
-        //std::cout << Q_;
-
-
+        Q_ = time_step_ * Q_base_matrix_ * sigmak_;
 
         H_f_.block<3, 3>(0,3) = MatrixXd::Identity(3, 3); //BØR ETTERSEES
         H_f_.block<3, 3>(3,6) = MatrixXd::Identity(3, 3);
@@ -101,18 +93,17 @@ public:
         Z_c_.block<3, 3>(3, 0) = MatrixXd::Identity(3, 3);
         Z_c_.block<3, 1>(3, 0) = -mass_*mass_center_;
         Z_c_.block<3, 3>(3, 6) = MatrixXd::Identity(3, 3);
-        std::cout << Z_c_ << std::endl;
 
-        R_a_ << s_a*varA_[0], 0, 0,
-            0, s_a*varA_[1], 0,
-            0, 0, s_a*varA_[2];
+        R_a_ << s_a_*varA_[0], 0, 0,
+            0, s_a_*varA_[1], 0,
+            0, 0, s_a_*varA_[2];
 
-        R_f_ << s_f*varF_[0], 0, 0, 0, 0, 0,
-            0, s_f*varF_[1], 0, 0, 0, 0,
-            0, 0, s_f*varF_[2], 0, 0, 0,
-            0, 0, 0, s_t*varT_[0], 0, 0,
-            0, 0, 0, 0, s_t*varT_[1], 0,
-            0, 0, 0, 0, 0, s_t*varT_[2];
+        R_f_ << s_f_*varF_[0], 0, 0, 0, 0, 0,
+            0, s_f_*varF_[1], 0, 0, 0, 0,
+            0, 0, s_f_*varF_[2], 0, 0, 0,
+            0, 0, 0, s_t_*varT_[0], 0, 0,
+            0, 0, 0, 0, s_t_*varT_[1], 0,
+            0, 0, 0, 0, 0, s_t_*varT_[2];
 
         R_.block<3, 3>(0, 0) = R_a_;
         R_.block<6, 6>(3, 3) = R_f_;
@@ -137,6 +128,8 @@ private:
     MatrixXd P_;  // Covariance matrix
     MatrixXd A_;  // State transition matrix
     std::vector<Matrix3d> B_;  // Control input matrix
+
+    MatrixXd Q_base_matrix_ = MatrixXd::Zero(9, 9);
     MatrixXd Q_ = MatrixXd::Zero(9, 9);  // Process noise covariance
 
     MatrixXd R_f_;  // FTS measurement noise covariance
