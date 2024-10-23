@@ -35,11 +35,11 @@ class ParameterEstimation {
         return forceBiasVector_;
     }
 
-    Eigen::Vector3d getTorqueBiasMatrix() {
+    Eigen::Vector3d getTorqueBiasVector() {
         return torqueBiasVector_;
     }
 
-    Eigen::Vector3d getImuBiasMatrix() {
+    Eigen::Vector3d getImuBiasVector() {
         return imuBiasVector_;
     }
 

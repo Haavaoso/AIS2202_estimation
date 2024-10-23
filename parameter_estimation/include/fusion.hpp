@@ -14,8 +14,10 @@ using namespace Eigen;
 class Fusion {
 public:
     Fusion(double mass, Vector3d massCenterEstimate, std::vector<double> forceVariance,
-        std::vector<double> torqueVariance, std::vector<double> accelVariance)
-        : mass_(mass), mass_center_(std::move(massCenterEstimate)), varF_(forceVariance), varT_(torqueVariance), varA_(accelVariance) {
+        std::vector<double> torqueVariance, std::vector<double> accelVariance, Vector3d forceBias,
+        Vector3d torqueBias, Vector3d imuBias)
+        : mass_(mass), mass_center_(std::move(massCenterEstimate)), varF_(forceVariance), varT_(torqueVariance), varA_(accelVariance),
+            forceBias_(forceBias), torqueBias_(torqueBias), imuBias_(imuBias) {
 
         A_ = MatrixXd::Identity(9, 9);
 
@@ -107,16 +109,16 @@ public:
 
     void updateMatrix(int i) {
         time_step_ = accel_data_[0][i] - prev_time_;
-        Q_ = time_step_ * Q_base_matrix_ * sigmak_;
+        Q_ = Q_base_matrix_ * sigmak_ * time_step_;
 
         //da imu ikkje er rotert samme måte som fts må ditta skje.
-        Vector3d thisIterationAccelData { accel_data_[1][i], accel_data_[2][i], accel_data_[3][i]};
+        Vector3d thisIterationAccelData { accel_data_[1][i], accel_data_[2][i], accel_data_[3][i]}; // - IMUBIAS?!?!?!
         Vector3d thisIterationAccelData_FTS_frame = thisIterationAccelData.transpose()*RotationMatrix_IMU_to_FTS_;
 
         //Oppdater tilstandsvariabel for nåverande iterasjon
         x_ << thisIterationAccelData_FTS_frame[0], thisIterationAccelData_FTS_frame[1], thisIterationAccelData_FTS_frame[2],
-        wrench_data_[1][i], wrench_data_[2][i], wrench_data_[3][i],
-        wrench_data_[4][i], wrench_data_[5][i], wrench_data_[6][i];
+        wrench_data_[1][i] - forceBias_[0], wrench_data_[2][i] - forceBias_[1], wrench_data_[3][i] - forceBias_[2],
+        wrench_data_[4][i] - torqueBias_[0], wrench_data_[5][i]- torqueBias_[1], wrench_data_[6][i]- torqueBias_[2];
 
         control_input_ = (thisIterationAccelData_FTS_frame - previousIterationAccelData_FTS_frame)*frequency_scalar_;
 
@@ -153,6 +155,9 @@ public:
         return R_f_;
     }
 
+    MatrixXd getX() {
+        return x_;
+    }
 
 
 
@@ -191,6 +196,8 @@ private:
     MatrixXd H_ = MatrixXd::Zero(6, 9);  // IMU output matrix
     MatrixXd Z_ = MatrixXd::Zero(6, 1);  // sensor matrise
 
+    MatrixXd H_Test_ = MatrixXd::Identity(6, 9);  // IMU output matrix
+
     Matrix3d RotationMatrix_IMU_to_FTS_ = Matrix3d::Identity(3, 3);
     Vector3d previousIterationAccelData_FTS_frame = Vector3d::Zero(3);
 
@@ -200,6 +207,10 @@ private:
     std::vector<double> varF_;
     std::vector<double> varT_;
     std::vector<double> varA_;
+
+    Vector3d forceBias_;
+    Vector3d torqueBias_;
+    Vector3d imuBias_;
 
     std::vector<std::vector<double>> accel_data_{};
     std::vector<std::vector<double>> wrench_data_{};

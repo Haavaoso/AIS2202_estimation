@@ -14,8 +14,8 @@ int main() {
     ParameterEstimation param(doc);
 
     std::cout << "force: " << "\n" << param.getForceBiasVector() << std::endl;
-    std::cout << "torqe: " << "\n" <<param.getTorqueBiasMatrix() << std::endl;
-    std::cout << "IMU" << "\n" <<param.getImuBiasMatrix() << std::endl;
+    std::cout << "torqe: " << "\n" <<param.getTorqueBiasVector() << std::endl;
+    std::cout << "IMU" << "\n" <<param.getImuBiasVector() << std::endl;
     std::cout << "massEstimate: " <<"\n" << param.getMassEstimate() << std::endl;
     std::cout << "centerMassEstimate: " <<"\n" << param.getCenterMassVector() << std::endl;
 

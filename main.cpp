@@ -27,6 +27,16 @@ void writeCSV(const std::string& filename, const std::vector<std::vector<std::st
     std::cout << "Data successfully written to " << filename << std::endl;
 }
 
+std::vector<std::string> vectorXdToString(const Eigen::VectorXd& vec) {
+    std::vector<std::string> result(vec.size());
+    for (int i = 0; i < vec.size(); ++i) {
+        std::ostringstream oss;
+        oss << std::fixed << std::setprecision(6) << vec[i]; // Adjust precision as needed
+        result[i] = oss.str();
+    }
+    return result;
+}
+
 int main() {
 
     rapidcsv::Document biasDoc("../dataset/0-calibration_fts-accel.csv");
@@ -40,9 +50,12 @@ int main() {
     ParameterEstimation parameter_estimation(biasDoc);
 
     auto forceBias = parameter_estimation.getForceBiasVector();
-    auto torqueBias = parameter_estimation.getTorqueVector();
+    auto torqueBias = parameter_estimation.getTorqueBiasVector();
+    auto imuBias = parameter_estimation.getImuBiasVector();
     auto massEstimate = parameter_estimation.getMassEstimate();
     auto centerMassEstimate = parameter_estimation.getCenterMassVector();
+
+    //std::cout << forceBias << " fb: " << torqueBias << " me: " << massEstimate << "cme: "<< centerMassEstimate << std::endl;
 
     std::vector<double> varForce(3);
     std::vector<double> varTorque(3);
@@ -61,15 +74,15 @@ int main() {
         varAccel[2] = variance(accelVarianceDoc, 2);
     }
 
-    Fusion fusion(massEstimate,centerMassEstimate,varForce,varTorque,varAccel);
+    Fusion fusion(massEstimate,centerMassEstimate,varForce,varTorque,varAccel,forceBias,torqueBias,imuBias);
     fusion.insertData(documentAccel,documentWrench,documentOrientations);
     fusion.updateMatrix(0);
 
-    MatrixXd P = 1000*MatrixXd::Identity(9,9); // inital estimate, vetta faen egnt
+    MatrixXd P = MatrixXd::Identity(9,9); // inital estimate, vetta faen egnt
     VectorXd X = VectorXd::Zero(9);
 
     kalman_filter kalman_filter(
-        X,
+        fusion.getX(),
         P,
         fusion.getA(),
         fusion.getB(),
@@ -80,16 +93,20 @@ int main() {
 
     std::vector<VectorXd> stateVariableVectorForPlotting;
 
-    for (int i = 0; i < 2; i++) {
-        kalman_filter.priori(fusion.getU());
+    for (int i = 0; i < documentAccel.GetRowCount(); i++) {
+        kalman_filter.priori(fusion.getU(), fusion.getQ());
         fusion.updateMatrix(i);
         kalman_filter.posteriori(fusion.getZ());
         stateVariableVectorForPlotting.push_back(kalman_filter.getX());
     }
 
-/*
+    std::vector<std::vector<std::string>> csvData;
+    for (const auto& vec : stateVariableVectorForPlotting) {
+        csvData.push_back(vectorXdToString(vec));
+    }
+
     std::string filename = csvPath;
-    //writeCSV(filename,data);
+    writeCSV(filename,csvData);
 
     /*k
 

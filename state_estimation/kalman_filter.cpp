@@ -1,7 +1,7 @@
 #include <Eigen/Dense>
 #include "include/kalman_filter.h"
 
-
+/*
 kalman_filter::kalman_filter(
         const Eigen::VectorXd& x_in,
         const Eigen::MatrixXd& P_in,
@@ -21,7 +21,7 @@ kalman_filter::kalman_filter(
     R = R_in;
 }
 
-void kalman_filter::priori(const Eigen::VectorXd& u){
+void kalman_filter::priori(const Eigen::VectorXd& u, const Eigen::MatrixXd& Q){
     x = A * x + B * u;     // Predicted state estimate
     P = A * P * A.transpose() + Q;  // Predicted covariance estimate
 }
