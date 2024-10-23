@@ -8,19 +8,16 @@
 #include <iostream>
 #include <Eigen/Dense>
 
-
 int main() {
     rapidcsv::Document doc("../dataset/0-calibration_fts-accel.csv");
 
     ParameterEstimation param(doc);
 
-    std::cout << "force: " << "\n" << param.getForceBiasMatrix() << std::endl;
+    std::cout << "force: " << "\n" << param.getForceBiasVector() << std::endl;
     std::cout << "torqe: " << "\n" <<param.getTorqueBiasMatrix() << std::endl;
     std::cout << "IMU" << "\n" <<param.getImuBiasMatrix() << std::endl;
     std::cout << "massEstimate: " <<"\n" << param.getMassEstimate() << std::endl;
     std::cout << "centerMassEstimate: " <<"\n" << param.getCenterMassVector() << std::endl;
-
-
 
 
     rapidcsv::Document doc0("../dataset/0-steady-state_accel.csv");
@@ -43,16 +40,10 @@ int main() {
         std::cout << "Check" << std::endl;
     }
 
-
-
-
-
     rapidcsv::Document doc_accel_data("../dataset/1-baseline_accel.csv");
     // std::cout << doc_accel_data.GetColumn<double>(0)[0] << std::endl;
     rapidcsv::Document doc_wrench_data("../dataset/1-baseline_wrench.csv");
     rapidcsv::Document doc_orientation_data("../dataset/1-baseline_orientations.csv");
-
-
 
     Fusion fusion(param.getMassEstimate(), param.getCenterMassVector(), varF, varT, varA);
 

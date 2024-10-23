@@ -6,6 +6,7 @@
 
 
 
+
 #ifndef FUSION_HPP
 #define FUSION_HPP
 
@@ -96,7 +97,7 @@ public:
         R_f_ = MatrixXd::Identity(6, 6);
         //R_ = MatrixXd::Identity(9, 9);
 
-        Z_c_.block<3, 3>(0, 0) = mass_*MatrixXd::Identity(3, 3);
+        Z_c_.block<3, 3>(0, 0) = -mass_*MatrixXd::Identity(3, 3);
         Z_c_.block<3, 3>(3, 0) = MatrixXd::Identity(3, 3);
         Z_c_.block<3, 1>(3, 0) = -mass_*mass_center_;
         Z_c_.block<3, 3>(3, 6) = MatrixXd::Identity(3, 3);
@@ -159,8 +160,5 @@ private:
     std::vector<std::vector<double>> wrench_data_{};
     std::vector<std::vector<double>> orientation_data_{};
 };
-
-
-
 
 #endif //FUSION_HPP

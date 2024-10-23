@@ -3,8 +3,6 @@
 #include "include/kalman_filter.h"
 
 
-using namespace estimation;
-
 kalman_filter::kalman_filter(
         const Eigen::VectorXd& x_in,
         const Eigen::MatrixXd& P_in,
