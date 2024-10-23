@@ -66,9 +66,10 @@ int main() {
     fusion.updateMatrix(0);
 
     MatrixXd P = 1000*MatrixXd::Identity(9,9); // inital estimate, vetta faen egnt
+    VectorXd X = VectorXd::Zero(9);
 
     kalman_filter kalman_filter(
-        fusion.getX(),
+        X,
         P,
         fusion.getA(),
         fusion.getB(),
@@ -77,15 +78,16 @@ int main() {
         fusion.getR()
         );
 
-/*
-    kalman_filter kalman_filter();
+    std::vector<VectorXd> stateVariableVectorForPlotting;
 
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < 2; i++) {
+        kalman_filter.priori(fusion.getU());
         fusion.updateMatrix(i);
-        kalman_filter
+        kalman_filter.posteriori(fusion.getZ());
+        stateVariableVectorForPlotting.push_back(kalman_filter.getX());
     }
 
-
+/*
     std::string filename = csvPath;
     //writeCSV(filename,data);
 
