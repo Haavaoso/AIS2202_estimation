@@ -56,6 +56,7 @@ public:
 
 
     void updateMatrix(int i) {
+
         A_ = MatrixXd::Identity(9, 9);
 
         B_.resize(3);
@@ -89,20 +90,31 @@ public:
 
 
         H_a_.block<3, 3>(0, 0) = MatrixXd::Identity(3, 3); //BØR ETTERSEES
-        std::cout << H_a_ << std::endl;
-        std::cout << H_f_ << std::endl;
-        varF_[0] = 250.0f * varF_[0];
-
-        varF_[1] = 250.0f * varF_[1];
-        varF_[2] = 250.0f * varF_[2];
 
 
-        std::cout << varF_[0] << " " << varF_[1] << " " << varF_[2] << std::endl;
+        R_a_ = MatrixXd::Identity(3, 3);
+        R_f_ = MatrixXd::Identity(6, 6);
+        //R_ = MatrixXd::Identity(9, 9);
 
+        Z_c_.block<3, 3>(0, 0) = mass_*MatrixXd::Identity(3, 3);
+        Z_c_.block<3, 3>(3, 0) = MatrixXd::Identity(3, 3);
+        Z_c_.block<3, 1>(3, 0) = -mass_*mass_center_;
+        Z_c_.block<3, 3>(3, 6) = MatrixXd::Identity(3, 3);
+        std::cout << Z_c_ << std::endl;
 
+        R_a_ << s_a*varA_[0], 0, 0,
+            0, s_a*varA_[1], 0,
+            0, 0, s_a*varA_[2];
 
+        R_f_ << s_f*varF_[0], 0, 0, 0, 0, 0,
+            0, s_f*varF_[1], 0, 0, 0, 0,
+            0, 0, s_f*varF_[2], 0, 0, 0,
+            0, 0, 0, s_t*varT_[0], 0, 0,
+            0, 0, 0, 0, s_t*varT_[1], 0,
+            0, 0, 0, 0, 0, s_t*varT_[2];
 
-
+        R_.block<3, 3>(0, 0) = R_a_;
+        R_.block<6, 6>(3, 3) = R_f_;
 
         prev_time_ = accel_data_[0][i];
     }
@@ -125,10 +137,18 @@ private:
     MatrixXd A_;  // State transition matrix
     std::vector<Matrix3d> B_;  // Control input matrix
     MatrixXd Q_ = MatrixXd::Zero(9, 9);  // Process noise covariance
-    MatrixXd R_f;  // FTS measurement noise covariance
+
+    MatrixXd R_f_;  // FTS measurement noise covariance
     MatrixXd R_a_;  // IMU measurement noise covariance
+    MatrixXd R_ =  MatrixXd::Zero(9, 9);;
+
     MatrixXd H_f_ = MatrixXd::Zero(6, 9);  // FTS output matrix
     MatrixXd H_a_ = MatrixXd::Zero(3, 9);  // IMU output matrix
+    MatrixXd H_ = MatrixXd::Zero(6, 9);  // IMU output matrix
+
+    MatrixXd Z_c_ = MatrixXd::Zero(6, 9);  // IMU output matrix
+
+
 
     double sigmak_ = 0.5;
     std::vector<double> varF_;
