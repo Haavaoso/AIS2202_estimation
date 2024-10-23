@@ -1,4 +1,3 @@
-
 #include <Eigen/Dense>
 #include "include/kalman_filter.h"
 
@@ -22,12 +21,12 @@ kalman_filter::kalman_filter(
     R = R_in;
 }
 
-void kalman_filter::predict(const Eigen::VectorXd& u){
+void kalman_filter::priori(const Eigen::VectorXd& u){
     x = A * x + B * u;     // Predicted state estimate
     P = A * P * A.transpose() + Q;  // Predicted covariance estimate
 }
 
-void kalman_filter::update(const Eigen::VectorXd& z){
+void kalman_filter::posteriori(const Eigen::VectorXd& z){
     Eigen::MatrixXd S = H * P * H.transpose() + R;  // Innovation covariance
     K = P * H.transpose() * S.inverse();            // Kalman gain
     x = x + K * (z - H * x);                        // Updated state estimate

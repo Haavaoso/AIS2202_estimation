@@ -18,6 +18,7 @@ endif()
 include_directories("${CMAKE_SOURCE_DIR}/include")
 
 file(COPY "${PROJECT_SOURCE_DIR}/dataset" DESTINATION "${CMAKE_BINARY_DIR}")
+file(COPY "data.csv" DESTINATION "${CMAKE_BINARY_DIR}")
 
 add_executable(complete_estimation main.cpp)
 
@@ -28,3 +29,6 @@ target_include_directories(complete_estimation
 add_subdirectory(state_estimation)
 add_subdirectory(parameter_estimation)
 add_subdirectory(estimation)
+
+set(csvPath "${PROJECT_SOURCE_DIR}/data.csv")
+target_compile_definitions(complete_estimation PRIVATE csvPath="${csvPath}")

@@ -13,8 +13,9 @@ public:
             const Eigen::MatrixXd& Q_in,
             const Eigen::MatrixXd& R_in
     );
-    void predict(const Eigen::VectorXd& u);
-    void update(const Eigen::VectorXd& z);
+    void priori(const Eigen::VectorXd& u);
+    void posteriori(const Eigen::VectorXd& z);
+
     Eigen::VectorXd x;     // State vector
     Eigen::MatrixXd P;     // Covariance matrix
     Eigen::MatrixXd A;     // State transition model

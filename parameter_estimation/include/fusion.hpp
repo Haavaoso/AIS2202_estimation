@@ -19,12 +19,9 @@ public:
 
         A_ = MatrixXd::Identity(9, 9);
 
-        B_.resize(3);
-
-        B_[0] = MatrixXd::Identity(3, 3);
-
-        B_[1] = mass_ * MatrixXd::Identity(3, 3);
-        B_[2] = mass_ * skewSymmetric(mass_center_);
+        B_.block<3,3>(0,0) =  MatrixXd::Identity(3, 3);
+        B_.block<3,3>(3,0) =  mass*MatrixXd::Identity(3, 3);
+        B_.block<3,3>(6,0) =  mass*skewSymmetric(massCenterEstimate);
 
         Q_base_matrix_.block<3, 3>(0, 0) = MatrixXd::Identity(3, 3);
 
@@ -99,7 +96,7 @@ public:
         prev_time_ = accel_data_[0][0];
     }
 
-    Matrix3d skewSymmetric(const Eigen::Vector3d& v) {
+    Matrix3d skewSymmetric(const Eigen::Vector3d& v) { // SPØR OM DITTA E RIKTIG=!!=!=!
         Eigen::Matrix3d skew;
         skew << 0,      -v.z(),   v.y(),
                 v.z(),   0,      -v.x(),
@@ -150,6 +147,26 @@ public:
         return control_input_;
     }
 
+    MatrixXd getA() {
+        return A_;
+    }
+
+    MatrixXd getB() {
+        return B_;
+    }
+
+    MatrixXd getH() {
+        return H_;
+    }
+
+    MatrixXd getR() {
+        return R_;
+    }
+    VectorXd getX() {
+        return x_;
+    }
+
+
 
 
 private:
@@ -171,14 +188,14 @@ private:
     Vector3d control_input_ = Vector3d::Zero(3);
     MatrixXd P_;  // Covariance matrix
     MatrixXd A_;  // State transition matrix
-    std::vector<Matrix3d> B_;  // Control input matrix
+    MatrixXd B_ = MatrixXd::Zero(9, 3);  // Control input matrix
 
     MatrixXd Q_base_matrix_ = MatrixXd::Zero(9, 9);
     MatrixXd Q_ = MatrixXd::Zero(9, 9);  // Process noise covariance
 
     MatrixXd R_f_;  // FTS measurement noise covariance
     MatrixXd R_a_;  // IMU measurement noise covariance
-    MatrixXd R_ =  MatrixXd::Zero(9, 9);;
+    MatrixXd R_ =  MatrixXd::Zero(9, 9);
 
     MatrixXd H_f_ = MatrixXd::Zero(6, 9);  // FTS output matrix
     MatrixXd H_a_ = MatrixXd::Zero(3, 9);  // IMU output matrix
