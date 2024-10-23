@@ -110,23 +110,32 @@ public:
 
     void updateMatrix(int i) {
         time_step_ = accel_data_[0][i] - prev_time_;
+        std::cout << "Check 1" << std::endl;
         Q_ = time_step_ * Q_base_matrix_ * sigmak_;
+        std::cout << "Check 2" << std::endl;
 
         //da imu ikkje er rotert samme måte som fts må ditta skje.
         Vector3d thisIterationAccelData { accel_data_[1][i], accel_data_[2][i], accel_data_[3][i]};
+        std::cout << "Check 3" << std::endl;
         Vector3d thisIterationAccelData_FTS_frame = thisIterationAccelData.transpose()*RotationMatrix_IMU_to_FTS_;
+        std::cout << "Check 4" << std::endl;
 
         //Oppdater tilstandsvariabel for nåverande iterasjon
         x_ << thisIterationAccelData_FTS_frame[0], thisIterationAccelData_FTS_frame[1], thisIterationAccelData_FTS_frame[2],
         wrench_data_[1][i], wrench_data_[2][i], wrench_data_[3][i],
         wrench_data_[4][i], wrench_data_[5][i], wrench_data_[6][i];
+        std::cout << "Check 5" << std::endl;
 
         control_input_ = (thisIterationAccelData_FTS_frame - previousIterationAccelData_FTS_frame)*frequency_scalar_;
+        std::cout << "Check 6" << std::endl;
 
 
         Z_ = Z_c_*x_;
+        std::cout << "Check 7" << std::endl;
         previousIterationAccelData_FTS_frame = thisIterationAccelData_FTS_frame;
+        std::cout << "Check 8" << std::endl;
         prev_time_ = accel_data_[0][i];
+        std::cout << "Check 9" << std::endl;
     }
 
     MatrixXd getZ() {

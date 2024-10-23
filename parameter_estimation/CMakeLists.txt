@@ -1,4 +1,5 @@
 
+find_package(Eigen3 CONFIG REQUIRED)
 
 # Create the executable
 add_executable(parameter_estimation main.cpp)

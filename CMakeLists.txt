@@ -21,11 +21,6 @@ file(COPY "${PROJECT_SOURCE_DIR}/dataset" DESTINATION "${CMAKE_BINARY_DIR}")
 
 add_executable(complete_estimation main.cpp)
 
-target_link_libraries(complete_estimation
-        state_estimation_lib
-        parameter_estimation_lib
-        Eigen3::Eigen )
-
 target_include_directories(complete_estimation
         PRIVATE ${RAPIDCSV_INCLUDE_DIRS}
         "${CMAKE_SOURCE_DIR}/estimation")

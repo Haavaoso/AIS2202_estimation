@@ -4,15 +4,15 @@
 #include "state_estimation/include/kalman_filter.h"
 #include <iostream>
 #include <vector>
-#include "rapidcsv.h"
-#include <Eigen/Dense>
 
 int main() {
     rapidcsv::Document biasDoc("../dataset/0-calibration_fts-accel.csv");
+    rapidcsv::Document accelVarianceDoc("../dataset/0-steady-state_accel.csv");
+    rapidcsv::Document wrenchVarianceDoc("../dataset/0-steady-state_wrench.csv");
 
     rapidcsv::Document documentAccel("../dataset/1-baseline_accel.csv");
-    rapidcsv::Document documentOrientations("../dataset/1-baseline_accel.csv");
-    rapidcsv::Document documentWrench("../dataset/1-baseline_accel.csv");
+    rapidcsv::Document documentOrientations("../dataset/1-baseline_orientations.csv");
+    rapidcsv::Document documentWrench("../dataset/1-baseline_wrench.csv");
 
     ParameterEstimation parameter_estimation(biasDoc);
 
@@ -27,19 +27,20 @@ int main() {
 
     //NOE SKJER HÆR
     {
-        varForce[0] = variance(documentWrench, 0);
-        varForce[1] = variance(documentWrench, 1);
-        varForce[2] = variance(documentWrench, 2);
-        varTorque[0] = variance(documentWrench, 3);
-        varTorque[1] = variance(documentWrench, 4);
-        varTorque[2] = variance(documentWrench, 5);
-        varAccel[0] = variance(documentAccel, 0);
-        varAccel[1] = variance(documentAccel, 1);
-        varAccel[2] = variance(documentAccel, 2);
-        std::cout << "Check" << std::endl;
+        varForce[0] = variance(wrenchVarianceDoc, 0);
+        varForce[1] = variance(wrenchVarianceDoc, 1);
+        varForce[2] = variance(wrenchVarianceDoc, 2);
+        varTorque[0] = variance(wrenchVarianceDoc, 3);
+        varTorque[1] = variance(wrenchVarianceDoc, 4);
+        varTorque[2] = variance(wrenchVarianceDoc, 5);
+        varAccel[0] = variance(accelVarianceDoc, 0);
+        varAccel[1] = variance(accelVarianceDoc, 1);
+        varAccel[2] = variance(accelVarianceDoc, 2);
     }
 
     Fusion fusion(massEstimate,centerMassEstimate,varForce,varTorque,varAccel);
+    fusion.insertData(documentAccel,documentWrench,documentOrientations);
+    fusion.updateMatrix(0);
 
     /*kalman_filter kalman_filter();
 
