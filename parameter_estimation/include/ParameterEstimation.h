@@ -29,7 +29,7 @@ class ParameterEstimation {
         return A.completeOrthogonalDecomposition().pseudoInverse();
     }
 
-    Eigen::Vector3d getForceBiasMatrix() {
+    Eigen::Vector3d getForceBiasVector() {
         return forceBiasVector_;
     }
 

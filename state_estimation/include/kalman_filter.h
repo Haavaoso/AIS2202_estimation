@@ -1,8 +1,6 @@
 #ifndef ESTIMATION_KALMAN_FILTER_H
 #define ESTIMATION_KALMAN_FILTER_H
 
-
-namespace estimation {
 class kalman_filter
 {
 public:
@@ -26,6 +24,6 @@ public:
     Eigen::MatrixXd R;     // Measurement noise covariance
     Eigen::MatrixXd K;     // Kalman gain
 };
-}
+
 
 #endif
