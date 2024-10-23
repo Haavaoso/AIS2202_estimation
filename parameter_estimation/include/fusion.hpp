@@ -56,7 +56,6 @@ public:
 
 
     void updateMatrix(int i) {
-
         A_ = MatrixXd::Identity(9, 9);
 
         B_.resize(3);
@@ -92,8 +91,10 @@ public:
         H_a_.block<3, 3>(0, 0) = MatrixXd::Identity(3, 3); //BØR ETTERSEES
         std::cout << H_a_ << std::endl;
         std::cout << H_f_ << std::endl;
+        varF_[0] = 250.0f * varF_[0];
 
-
+        varF_[1] = 250.0f * varF_[1];
+        varF_[2] = 250.0f * varF_[2];
 
 
         std::cout << varF_[0] << " " << varF_[1] << " " << varF_[2] << std::endl;
@@ -112,6 +113,10 @@ private:
     double mass_;
     double time_step_{};
     double prev_time_ = 0.0;
+    double s_f_ = 250;
+    double s_t_ = 5000;
+    double s_a_ = 100;
+
 
     Vector3d mass_center_;
     Vector3d inertia;
