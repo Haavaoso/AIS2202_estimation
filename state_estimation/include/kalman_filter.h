@@ -28,7 +28,7 @@ public:
         //std::cout << "P: " << P.rows() << "x" << P.cols() << std::endl;
     }
 
-    void posteriori(const Eigen::VectorXd &z) {
+    void posteriori(const Eigen::VectorXd &z, const Eigen::MatrixXd& H, const Eigen::MatrixXd& R) {
         //std::cout << "H: " << H.rows() << "x" << H.cols() << std::endl;
         //std::cout << "R: " << R.rows() << "x" << R.cols() << std::endl;
         Eigen::MatrixXd S = H * P * H.transpose() + R; // Innovation covariance // BRUKER BARE R_f_ fordi den e 6x6

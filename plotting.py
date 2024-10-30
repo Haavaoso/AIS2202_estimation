@@ -26,7 +26,7 @@ plt.figure(1)
 #plt.plot(time, fx)
 #plt.plot(time, fy)
 plt.plot(time, fz)
-plt.plot(time,kalman3)
+plt.plot(time,kalman5)
 
 plt.grid(True)
 plt.show()
