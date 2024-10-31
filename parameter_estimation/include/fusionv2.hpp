@@ -1,12 +1,16 @@
+//
+// Created by morte on 31/10/2024.
+//
+
+#ifndef FUSIONV2_HPP
+#define FUSIONV2_HPP
+
 #include <utility>
 
-#ifndef FUSION_HPP
-#define FUSION_HPP
-
 using namespace Eigen;
-class Fusion {
+class Fusion2 {
 public:
-    Fusion(double mass, Vector3d massCenterEstimate, std::vector<double> forceVariance,
+    Fusion2(double mass, Vector3d massCenterEstimate, std::vector<double> forceVariance,
         std::vector<double> torqueVariance, std::vector<double> accelVariance, Vector3d forceBias,
         Vector3d torqueBias, Vector3d imuBias)
         : mass_(mass), mass_center_(std::move(massCenterEstimate)), varF_(forceVariance), varT_(torqueVariance), varA_(accelVariance),
@@ -210,4 +214,4 @@ private:
     std::vector<std::vector<double>> orientation_data_{};
 };
 
-#endif //FUSION_HPP
+#endif //FUSIONV2_HPP
