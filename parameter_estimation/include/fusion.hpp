@@ -125,6 +125,7 @@ public:
             Orientation[0], Orientation[1], Orientation[2],
             Orientation[3], Orientation[4], Orientation[5],
             Orientation[6], Orientation[7], Orientation[8];
+        rotationMatrixWS_ = rotationMatrixWS_*RotationMatrix_IMU_to_FTS_;
         control_input_ = (rotationMatrixWS_.transpose()*x_.segment(0,3) - previousAccelG_)*frequency_scalar_;
         previousAccelG_ = rotationMatrixWS_.transpose()*x_.segment(0,3);
     }
@@ -136,16 +137,23 @@ public:
 
     void updateMatrices() {
         for (int i = startTime_; i < endTime_; i++) {
-            if (accel_data_[0][0] == i) {
-                std::vector<double> accel_data(accel_data_.begin() + 1, accel_data_.end());
-                updateAccel({accel_data_[0][1],accel_data_[0][2],accel_data_[0][3]});
+            if (accel_data_[0][0] == i && !accel_data_.empty()) {
+                Vector3d accel_data(accel_data_.begin() + 1, accel_data_.end());
+                updateAccel(accel_data);
+                accel_data_.erase(accel_data_.begin());
+                prev_time_ = i;
             }
-            if (orientation_data_[0][0] == i) {
+            else if (orientation_data_[0][0] == i && !orientation_data_.empty()) {
                 updateOrientation({accel_data_[0][1],accel_data_[0][2],accel_data_[0][3]});
+                orientation_data_.erase(orientation_data_.begin());
+                prev_time_ = i;
             }
-            if (accel_data_[0][0] == i) {
-                updateAccel({accel_data_[0][1],accel_data_[0][2],accel_data_[0][3]});
+            else if (wrench_data_[0][0] == i && !wrench_data_.empty()) {
+                updateFTS({accel_data_[0][1],accel_data_[0][2],accel_data_[0][3]});
+                accel_data_.erase(accel_data_.begin());
+                prev_time_ = i;
             }
+            else;
         }
     }
 
@@ -220,6 +228,7 @@ private:
     double frequency_scalar_ = f_r_ / (f_f_ + f_a_);
     int startTime_;
     int endTime_;
+    bool finished_ = false;
 
 
     Vector3d mass_center_;
