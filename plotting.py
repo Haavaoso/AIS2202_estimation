@@ -5,10 +5,10 @@ import matplotlib.pyplot as plt
 df = pd.read_csv("dataset/1-baseline_wrench.csv", skiprows=1)
 df1 = pd.read_csv("data.csv")
 
-time = np.array(df.iloc[0:1592, 0])
+time = np.array(df.iloc[:, 0])
 fx = np.array(df.iloc[:, 1])
 fy = np.array(df.iloc[:, 2])
-fz = np.array(df.iloc[0:1592, 3])
+fz = np.array(df.iloc[:, 3])
 
 kalman0 = np.array(df1.iloc[:, 0])
 kalman1 = np.array(df1.iloc[:, 1])
@@ -25,8 +25,8 @@ kalman8 = np.array(df1.iloc[:, 8])
 plt.figure(1)
 #plt.plot(time, fx)
 #plt.plot(time, fy)
-plt.plot(time, fz)
-plt.plot(time,kalman3)
+#plt.plot(time, fz)
+plt.plot(kalman5)
 
 plt.grid(True)
 plt.show()

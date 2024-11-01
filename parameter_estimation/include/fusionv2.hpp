@@ -8,6 +8,7 @@
 #include <utility>
 
 using namespace Eigen;
+
 class Fusion2 {
 public:
     Fusion2(double mass, Vector3d massCenterEstimate, std::vector<double> forceVariance,
@@ -30,10 +31,13 @@ public:
 
         Q_base_matrix_.block<3, 3>(6, 6) = mass_ * fuck_trippel_trumf *  Matrix3d::Identity(3, 3);
 
+        H_f_.block<3, 3>(0,0) = MatrixXd::Zero(3, 3); //BØR ETTERSEES
         H_f_.block<3, 3>(0,3) = MatrixXd::Identity(3, 3); //BØR ETTERSEES
         H_f_.block<3, 3>(3,6) = MatrixXd::Identity(3, 3);
-        H_a_.block<3, 3>(0, 0) = MatrixXd::Identity(3, 3); //BØR ETTERSEES
 
+        H_a_.block<3, 3>(0, 0) = MatrixXd::Identity(3, 3); //BØR ETTERSEES
+        H_a_.block<3, 3>(0, 3) = MatrixXd::Zero(3, 3);
+        H_a_.block<3, 3>(0, 6) = MatrixXd::Zero(3, 3);
 
         R_a_ = MatrixXd::Identity(3, 3); // Sensor varians
         R_f_ = MatrixXd::Identity(6, 6);
@@ -93,6 +97,22 @@ public:
             orientation_data_[i] = orientation.GetColumn<double>(i);
         }
         prev_time_ = accel_data_[0][0];
+
+        auto startTimes = {accel_data_[0][0],orientation_data_[0][0],wrench_data_[0][0]};
+        auto endTimes = {accel_data_[0].back() ,orientation_data_[0].back() ,wrench_data_[0].back()};
+        startTime_ = std::min(startTimes);
+        endTime_ = std::max(endTimes);
+        index_ = startTime_;
+    }
+
+    Matrix3d updateRotationMatrix() {
+        auto data = orientation_data_[0];
+        Matrix3d rotation;
+        rotation <<
+            data[0], data[1], data[2],
+            data[3], data[4], data[5],
+            data[6], data[7], data[8];
+        return rotation;
     }
 
     Matrix3d skewSymmetric(const Eigen::Vector3d& v) { // SPØR OM DITTA E RIKTIG=!!=!=!
@@ -101,6 +121,80 @@ public:
                 v.z(),   0,      -v.x(),
                -v.y(),  v.x(),    0;
         return skew;
+    }
+
+    void updateAccel() {
+        //std::cout << "ACCEL" << std::endl;
+        H_.resize(3,9);
+        H_ = H_a_;
+        //std::cout << H_ << std::endl;
+        Z_.resize(3,1);
+        Z_ = H_a_*x_;
+        //std::cout << Z_ << std::endl;
+        R_.resize(3,3);
+        R_ = R_a_;
+        //std::cout << R_ << std::endl;
+    }
+
+    void updateFTS() {
+        //std::cout << "FTS" << std::endl;
+        H_.resize(6,9);
+        H_ = H_f_;
+        //std::cout << H_ << std::endl;
+        Z_.resize(6,1);
+        Z_ = H_f_*x_;
+        //std::cout << Z_ << std::endl;
+        R_.resize(6,6);
+        R_ = R_f_;
+        //std::cout << R_ << std::endl;
+    }
+
+    void updateOrientation() {
+        Vector3d g = {accel_data_[1][0], accel_data_[2][0], accel_data_[3][0]};
+        auto ctrl = updateRotationMatrix();
+        u_ = (ctrl.transpose()*g - prev_u_)*frequency_scalar_; // accel_data_[1][0]*9.81, accel_data_[2][0]*9.81, accel_data_[3][0]*9.81,
+    }
+
+    void updateStateVariables() {
+        x_ << accel_data_[1][0], accel_data_[2][0], accel_data_[3][0],
+        wrench_data_[1][0] - forceBias_[0], wrench_data_[2][0] - forceBias_[1], wrench_data_[3][0] - forceBias_[2],
+        wrench_data_[4][0] - torqueBias_[0], wrench_data_[5][0]- torqueBias_[1], wrench_data_[6][0]- torqueBias_[2];
+    }
+
+    void updateMatrices() {
+        while (index_ < endTime_) {
+            if (!accel_data_[0].empty()) {
+                if(accel_data_[0][0] == index_) {
+                    updateStateVariables();
+                    updateAccel();
+                    Q_ = Q_base_matrix_ * sigmak_ * (index_ - prev_time_);
+                    accel_data_[0].erase(accel_data_[0].begin());
+                    prev_time_ = index_;
+                    break;
+                }
+            }
+            if (!orientation_data_[0].empty()) {
+                if(orientation_data_[0][0] == index_) {
+                    updateStateVariables();
+                    Q_ = Q_base_matrix_ * sigmak_ * (index_ - prev_time_);
+                    orientation_data_[0].erase(orientation_data_[0].begin());
+                    prev_time_ = index_;
+                    break;
+                }
+            }
+            if (!wrench_data_[0].empty()) {
+                if(wrench_data_[0][0] == index_) {
+                    updateStateVariables();
+                    updateFTS();
+                    Q_ = Q_base_matrix_ * sigmak_ * (index_ - prev_time_);
+                    wrench_data_[0].erase(wrench_data_[0].begin());
+                    prev_time_ = index_;
+                    break;
+                }
+            }
+            index_++;
+        }
+        if (index_>= endTime_) isFinished_ = true;
     }
 
 
@@ -117,7 +211,7 @@ public:
         wrench_data_[1][i] - forceBias_[0], wrench_data_[2][i] - forceBias_[1], wrench_data_[3][i] - forceBias_[2],
         wrench_data_[4][i] - torqueBias_[0], wrench_data_[5][i]- torqueBias_[1], wrench_data_[6][i]- torqueBias_[2];
 
-        control_input_ = (thisIterationAccelData_FTS_frame - previousIterationAccelData_FTS_frame)*frequency_scalar_;
+        u_ = (thisIterationAccelData_FTS_frame - previousIterationAccelData_FTS_frame)*frequency_scalar_;
 
         Z_ = H_*x_;
         previousIterationAccelData_FTS_frame = thisIterationAccelData_FTS_frame;
@@ -133,7 +227,7 @@ public:
     }
 
     Vector3d getU() {
-        return control_input_;
+        return u_;
     }
 
     MatrixXd getA() {
@@ -149,11 +243,15 @@ public:
     }
 
     MatrixXd getR() {
-        return R_f_;
+        return R_;
     }
 
     MatrixXd getX() {
         return x_;
+    }
+
+    bool isFinished() {
+        return isFinished_;
     }
 
 
@@ -170,11 +268,17 @@ private:
     double f_a_ = 254.3;
     double frequency_scalar_ = f_r_/(f_f_+f_a_);
 
+    long long startTime_;
+    long long endTime_;
+    long long index_;
+    bool isFinished_ = false;
+
 
     Vector3d mass_center_;
     Vector3d inertia;
     VectorXd x_;  // State vector
-    Vector3d control_input_ = Vector3d::Zero(3);
+    Vector3d u_ = Vector3d::Zero(3);
+    Vector3d prev_u_ = Vector3d::Zero(3);
     MatrixXd P_;  // Covariance matrix
     MatrixXd A_;  // State transition matrix
     MatrixXd B_ = MatrixXd::Zero(9, 3);  // Control input matrix

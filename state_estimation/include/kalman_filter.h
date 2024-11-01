@@ -28,14 +28,14 @@ public:
         //std::cout << "P: " << P.rows() << "x" << P.cols() << std::endl;
     }
 
-    void posteriori(const Eigen::VectorXd &z) {
-        //std::cout << "H: " << H.rows() << "x" << H.cols() << std::endl;
-        //std::cout << "R: " << R.rows() << "x" << R.cols() << std::endl;
-        Eigen::MatrixXd S = H * P * H.transpose() + R; // Innovation covariance // BRUKER BARE R_f_ fordi den e 6x6
+    void posteriori(const Eigen::VectorXd &z, const Eigen::MatrixXd &r, const Eigen::MatrixXd &h) {
+        //std::cout << "H: " << h.rows() << "x" << h.cols() << std::endl;
+        //std::cout << "R: " << r.rows() << "x" << r.cols() << std::endl;
+        Eigen::MatrixXd S = h * P * h.transpose() + r; // Innovation covariance // BRUKER BARE R_f_ fordi den e 6x6
         //std::cout << "S: " << S.rows() << "x" << S.cols() << std::endl;
-        K = P * H.transpose() * S.inverse(); // Kalman gain
-        x = x + K * (z - H * x); // Updated state estimate
-        P = (Eigen::MatrixXd::Identity(x.size(), x.size()) - K * H) * P; // Updated covariance
+        K = P * h.transpose() * S.inverse(); // Kalman gain
+        x = x + K * (z - h * x); // Updated state estimate
+        P = (Eigen::MatrixXd::Identity(x.size(), x.size()) - K * h) * P; // Updated covariance
     }
 
     Eigen::VectorXd getX() {

@@ -2,6 +2,7 @@
 #include "parameter_estimation/include/fusion.hpp"
 #include "parameter_estimation/include/variance.h"
 #include "state_estimation/include/kalman_filter.h"
+#include "parameter_estimation/include/fusionv2.hpp"
 #include <iostream>
 #include <vector>
 #include <fstream>
@@ -76,7 +77,10 @@ int main() {
 
     Fusion fusion(massEstimate,centerMassEstimate,varForce,varTorque,varAccel,forceBias,torqueBias,imuBias);
     fusion.insertData(documentAccel,documentWrench,documentOrientations);
-    fusion.updateMatrix(0);
+    //fusion.updateMatrix(0);
+
+    Fusion2 fusion2(massEstimate,centerMassEstimate,varForce,varTorque,varAccel,forceBias,torqueBias,imuBias);
+    fusion2.insertData(documentAccel,documentWrench,documentOrientations);
 
     MatrixXd P = MatrixXd::Identity(9,9); // inital estimate, vetta faen egnt
     VectorXd X = VectorXd::Zero(9);
@@ -93,10 +97,16 @@ int main() {
 
     std::vector<VectorXd> stateVariableVectorForPlotting;
 
-    for (int i = 0; i < documentAccel.GetRowCount(); i++) {
-        kalman_filter.priori(fusion.getU(), fusion.getQ());
-        fusion.updateMatrix(i);
-        kalman_filter.posteriori(fusion.getZ());
+    //fusion2.updateMatrices();
+    int i = 0;
+    fusion2.updateMatrices();
+
+    while (!fusion2.isFinished()) {
+        //std::cout << i << std::endl;
+        kalman_filter.priori(fusion2.getU(), fusion2.getQ());
+        fusion2.updateMatrices();
+        //std::cout << i << "A" << std::endl;
+        kalman_filter.posteriori(fusion2.getZ(),fusion2.getR(),fusion2.getH());
         stateVariableVectorForPlotting.push_back(kalman_filter.getX());
     }
 
@@ -109,7 +119,12 @@ int main() {
     writeCSV(filename,csvData);
 
     /*k
-
+    for (int i = 0; i < fusion2.isFinished(); i++) {
+        kalman_filter.priori(fusion.getU(), fusion.getQ());
+        fusion2.updateMatrices();
+        kalman_filter.posteriori(fusion.getZ());
+        stateVariableVectorForPlotting.push_back(kalman_filter.getX());
+    }
     for (int i = 0; i < documentAccel.GetRowCount(); i++) {
         kalman_filter().predict();
         kalman_filter().update(z);
