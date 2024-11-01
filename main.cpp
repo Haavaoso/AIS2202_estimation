@@ -92,8 +92,8 @@ int main() {
         );
 
     std::vector<VectorXd> stateVariableVectorForPlotting;
-/*
-    for (int i = 0; i < documentOrientations.GetRowCount(); i++) {
+
+    for (int i = 0; i < documentAccel.GetRowCount(); i++) {
         kalman_filter.priori(fusion.getU(), fusion.getQ());
         fusion.updateMatrix(i);
         kalman_filter.posteriori(fusion.getZ());
