@@ -103,6 +103,7 @@ public:
         startTime_ = std::min(startTimes);
         endTime_ = std::max(endTimes);
         index_ = startTime_;
+        prev_time_ = startTime_;
     }
 
     Matrix3d updateRotationMatrix() {
@@ -156,9 +157,13 @@ public:
     }
 
     void updateStateVariables() {
-        x_ << accel_data_[1][0], accel_data_[2][0], accel_data_[3][0],
+        Vector3d thisIterationAccelData { accel_data_[1][0], accel_data_[2][0], accel_data_[3][0]}; // - IMUBIAS?!?!?!
+        Vector3d accel = thisIterationAccelData.transpose()*RotationMatrix_IMU_to_FTS_;
+
+        x_ << accel[0], accel[1], accel[2],
         wrench_data_[1][0] - forceBias_[0], wrench_data_[2][0] - forceBias_[1], wrench_data_[3][0] - forceBias_[2],
         wrench_data_[4][0] - torqueBias_[0], wrench_data_[5][0]- torqueBias_[1], wrench_data_[6][0]- torqueBias_[2];
+        std::cout << wrench_data_[1][0] << " : " <<wrench_data_[2][0] << " : " << wrench_data_[3][0] << " : " << wrench_data_[4][0] << " : " <<wrench_data_[5][0] << " : " <<wrench_data_[6][0] << std::endl;
     }
 
     void updateMatrices() {
