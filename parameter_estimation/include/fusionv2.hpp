@@ -5,6 +5,7 @@
 #ifndef FUSIONV2_HPP
 #define FUSIONV2_HPP
 
+#include <deque>
 #include <utility>
 
 using namespace Eigen;
@@ -76,7 +77,9 @@ public:
         const rapidcsv::Document& wrench,
         const rapidcsv::Document& orientation) {
 
-        accel_data_ = std::vector(accel.GetColumnCount(), std::vector<double>(accel.GetRowCount()));
+        std::deque accel_data = {accel.GetColumnCount(), std::vector<double>(accel.GetRowCount())};
+
+        accel_data_ = {accel.GetColumnCount(), std::vector<double>(accel.GetRowCount())};
         wrench_data_ = std::vector(wrench.GetColumnCount(), std::vector<double>(wrench.GetRowCount()));
         orientation_data_ = std::vector(orientation.GetColumnCount(), std::vector<double>(orientation.GetRowCount()));
 
@@ -107,12 +110,11 @@ public:
     }
 
     Matrix3d updateRotationMatrix() {
-        auto data = orientation_data_[0];
         Matrix3d rotation;
         rotation <<
-            data[0], data[1], data[2],
-            data[3], data[4], data[5],
-            data[6], data[7], data[8];
+            orientation_data_[1][0], orientation_data_[2][0], orientation_data_[3][0],
+            orientation_data_[3][0], orientation_data_[4][0], orientation_data_[5][0],
+            orientation_data_[6][0], orientation_data_[7][0],orientation_data_[8][0];
         return rotation;
     }
 
@@ -151,19 +153,25 @@ public:
     }
 
     void updateOrientation() {
-        Vector3d g = {accel_data_[1][0], accel_data_[2][0], accel_data_[3][0]};
+        Vector3d g = {x_[0], x_[1], x_[2]};
         auto ctrl = updateRotationMatrix();
         u_ = (ctrl.transpose()*g - prev_u_)*frequency_scalar_; // accel_data_[1][0]*9.81, accel_data_[2][0]*9.81, accel_data_[3][0]*9.81,
     }
 
     void updateStateVariables() {
-        Vector3d thisIterationAccelData { accel_data_[1][0], accel_data_[2][0], accel_data_[3][0]}; // - IMUBIAS?!?!?!
+        Vector3d thisIterationAccelData { accel_data_[1][0]*9.81, accel_data_[2][0]*9.81, accel_data_[3][0]*9.81}; // - IMUBIAS?!?!?!
         Vector3d accel = thisIterationAccelData.transpose()*RotationMatrix_IMU_to_FTS_;
 
         x_ << accel[0], accel[1], accel[2],
         wrench_data_[1][0] - forceBias_[0], wrench_data_[2][0] - forceBias_[1], wrench_data_[3][0] - forceBias_[2],
         wrench_data_[4][0] - torqueBias_[0], wrench_data_[5][0]- torqueBias_[1], wrench_data_[6][0]- torqueBias_[2];
-        std::cout << wrench_data_[1][0] << " : " <<wrench_data_[2][0] << " : " << wrench_data_[3][0] << " : " << wrench_data_[4][0] << " : " <<wrench_data_[5][0] << " : " <<wrench_data_[6][0] << std::endl;
+        //std::cout << wrench_data_[1][0] << " : " <<wrench_data_[2][0] << " : " << wrench_data_[3][0] << " : " << wrench_data_[4][0] << " : " <<wrench_data_[5][0] << " : " <<wrench_data_[6][0] << std::endl;
+    }
+
+    void deleteLine(std::vector<std::vector<double>> &data) {
+        for (int i = 0; i < data.size(); i++) {
+            data[i].erase(data[i].begin());
+        }
     }
 
     void updateMatrices() {
@@ -173,7 +181,7 @@ public:
                     updateStateVariables();
                     updateAccel();
                     Q_ = Q_base_matrix_ * sigmak_ * (index_ - prev_time_);
-                    accel_data_[0].erase(accel_data_[0].begin());
+                    deleteLine(accel_data_);
                     prev_time_ = index_;
                     break;
                 }
@@ -181,8 +189,9 @@ public:
             if (!orientation_data_[0].empty()) {
                 if(orientation_data_[0][0] == index_) {
                     updateStateVariables();
+                    updateOrientation();
                     Q_ = Q_base_matrix_ * sigmak_ * (index_ - prev_time_);
-                    orientation_data_[0].erase(orientation_data_[0].begin());
+                    deleteLine(orientation_data_);
                     prev_time_ = index_;
                     break;
                 }
@@ -192,7 +201,7 @@ public:
                     updateStateVariables();
                     updateFTS();
                     Q_ = Q_base_matrix_ * sigmak_ * (index_ - prev_time_);
-                    wrench_data_[0].erase(wrench_data_[0].begin());
+                    deleteLine(wrench_data_);
                     prev_time_ = index_;
                     break;
                 }
