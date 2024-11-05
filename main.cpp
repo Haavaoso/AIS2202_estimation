@@ -48,6 +48,10 @@ int main() {
     rapidcsv::Document documentOrientations("../dataset/1-baseline_orientations.csv");
     rapidcsv::Document documentWrench("../dataset/1-baseline_wrench.csv");
 
+    rapidcsv::Document documentAccel2("../dataset/2-vibrations_accel.csv");
+    rapidcsv::Document documentOrientations2("../dataset/2-vibrations_orientations.csv");
+    rapidcsv::Document documentWrench2("../dataset/2-vibrations_wrench.csv");
+
     ParameterEstimation parameter_estimation(biasDoc);
 
     auto forceBias = parameter_estimation.getForceBiasVector();
@@ -83,16 +87,16 @@ int main() {
     fusion2.insertData(documentAccel,documentWrench,documentOrientations);
 
     MatrixXd P = MatrixXd::Identity(9,9); // inital estimate, vetta faen egnt
-    VectorXd X = VectorXd::Zero(9);
+    VectorXd X = VectorXd::Ones(9);
 
     kalman_filter kalman_filter(
-        fusion.getX(),
+        X,
         P,
-        fusion.getA(),
-        fusion.getB(),
-        fusion.getH(),
-        fusion.getQ(),
-        fusion.getR()
+        fusion2.getA(),
+        fusion2.getB(),
+        fusion2.getH(),
+        fusion2.getQ(),
+        fusion2.getR()
         );
 
     std::vector<VectorXd> stateVariableVectorForPlotting;
@@ -103,11 +107,14 @@ int main() {
 
     while (!fusion2.isFinished()) {
         //std::cout << i << std::endl;
-        kalman_filter.priori(fusion2.getU(), fusion2.getQ());
         fusion2.updateMatrices();
+        kalman_filter.priori(fusion2.getU(), fusion2.getQ());
         //std::cout << i << "A" << std::endl;
         kalman_filter.posteriori(fusion2.getZ(),fusion2.getR(),fusion2.getH());
         stateVariableVectorForPlotting.push_back(kalman_filter.getX());
+        //std::cout << kalman_filter.P << "BREAK" << "\n" << std::endl;
+        //if (i > 10) break;
+        //i++;
     }
 
     std::vector<std::vector<std::string>> csvData;

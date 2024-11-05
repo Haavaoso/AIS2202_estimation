@@ -54,6 +54,8 @@ public:
             0, 0, 0, 0, s_t_*varT_[1], 0,
             0, 0, 0, 0, 0, s_t_*varT_[2];
 
+        //std::cout <<  s_f_*varF_[0] << " : "<< s_f_*varF_[1] << " : "<< s_f_*varF_[2] << " : " << std::endl;
+
         R_.block<3, 3>(0, 0) = R_a_;
         R_.block<6, 6>(3, 3) = R_f_;
 
@@ -153,18 +155,19 @@ public:
     }
 
     void updateOrientation() {
-        Vector3d g = {x_[0], x_[1], x_[2]};
+        Vector3d g = {0, 0, 9.81};
         auto ctrl = updateRotationMatrix();
         u_ = (ctrl.transpose()*g - prev_u_)*frequency_scalar_; // accel_data_[1][0]*9.81, accel_data_[2][0]*9.81, accel_data_[3][0]*9.81,
+        prev_u_ = u_;
     }
 
     void updateStateVariables() {
         Vector3d thisIterationAccelData { accel_data_[1][0]*9.81, accel_data_[2][0]*9.81, accel_data_[3][0]*9.81}; // - IMUBIAS?!?!?!
-        Vector3d accel = thisIterationAccelData.transpose()*RotationMatrix_IMU_to_FTS_;
+        Vector3d accel = RotationMatrix_IMU_to_FTS_*thisIterationAccelData;
 
         x_ << accel[0], accel[1], accel[2],
         wrench_data_[1][0] - forceBias_[0], wrench_data_[2][0] - forceBias_[1], wrench_data_[3][0] - forceBias_[2],
-        wrench_data_[4][0] - torqueBias_[0], wrench_data_[5][0]- torqueBias_[1], wrench_data_[6][0]- torqueBias_[2];
+        wrench_data_[4][0] - torqueBias_[0], wrench_data_[5][0] - torqueBias_[1], wrench_data_[6][0] - torqueBias_[2];
         //std::cout << wrench_data_[1][0] << " : " <<wrench_data_[2][0] << " : " << wrench_data_[3][0] << " : " << wrench_data_[4][0] << " : " <<wrench_data_[5][0] << " : " <<wrench_data_[6][0] << std::endl;
     }
 
@@ -211,27 +214,6 @@ public:
         if (index_>= endTime_) isFinished_ = true;
     }
 
-
-    void updateMatrix(int i) {
-        time_step_ = accel_data_[0][i] - prev_time_;
-        Q_ = Q_base_matrix_ * sigmak_ * time_step_;
-
-        //da imu ikkje er rotert samme måte som fts må ditta skje.
-        Vector3d thisIterationAccelData { accel_data_[1][i], accel_data_[2][i], accel_data_[3][i]}; // - IMUBIAS?!?!?!
-        Vector3d thisIterationAccelData_FTS_frame = thisIterationAccelData.transpose()*RotationMatrix_IMU_to_FTS_;
-
-        //Oppdater tilstandsvariabel for nåverande iterasjon
-        x_ << thisIterationAccelData_FTS_frame[0], thisIterationAccelData_FTS_frame[1], thisIterationAccelData_FTS_frame[2],
-        wrench_data_[1][i] - forceBias_[0], wrench_data_[2][i] - forceBias_[1], wrench_data_[3][i] - forceBias_[2],
-        wrench_data_[4][i] - torqueBias_[0], wrench_data_[5][i]- torqueBias_[1], wrench_data_[6][i]- torqueBias_[2];
-
-        u_ = (thisIterationAccelData_FTS_frame - previousIterationAccelData_FTS_frame)*frequency_scalar_;
-
-        Z_ = H_*x_;
-        previousIterationAccelData_FTS_frame = thisIterationAccelData_FTS_frame;
-        prev_time_ = accel_data_[0][i];
-    }
-
     MatrixXd getZ() {
         return Z_;
     }
@@ -258,10 +240,6 @@ public:
 
     MatrixXd getR() {
         return R_;
-    }
-
-    MatrixXd getX() {
-        return x_;
     }
 
     bool isFinished() {
@@ -310,13 +288,7 @@ private:
 
     MatrixXd H_ = MatrixXd::Zero(6, 9);  // IMU output matrix
     MatrixXd Z_ = MatrixXd::Zero(6, 1);  // sensor matrise
-
-    MatrixXd H_Test_ = MatrixXd::Identity(6, 9);  // IMU output matrix
-
-    Matrix3d RotationMatrix_IMU_to_FTS_ = Matrix3d::Identity(3, 3);
-    Vector3d previousIterationAccelData_FTS_frame = Vector3d::Zero(3);
-
-
+    Matrix3d RotationMatrix_IMU_to_FTS_;
 
     double sigmak_ = 0.5;
     std::vector<double> varF_;
