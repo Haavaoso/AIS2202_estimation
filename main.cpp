@@ -7,28 +7,28 @@
 #include <vector>
 #include <fstream>
 
-void writeCSV(const std::string& filename, const std::vector<std::vector<std::string>>& data) {
-    std::ofstream file(filename);  // Create and open the file
+void writeCSV(const std::string &filename, const std::vector<std::vector<std::string> > &data) {
+    std::ofstream file(filename); // Create and open the file
     if (!file.is_open()) {
         std::cerr << "Error: Could not open the file " << filename << std::endl;
         return;
     }
 
     // Loop through the data and write it to the file
-    for (const auto& row : data) {
+    for (const auto &row: data) {
         for (size_t i = 0; i < row.size(); ++i) {
-            file << row[i];  // Write each element
-            if (i != row.size() - 1)  // Add a comma except after the last element
+            file << row[i]; // Write each element
+            if (i != row.size() - 1) // Add a comma except after the last element
                 file << ",";
         }
-        file << "\n";  // New line after each row
+        file << "\n"; // New line after each row
     }
 
-    file.close();  // Don't forget to close the file
+    file.close(); // Don't forget to close the file
     std::cout << "Data successfully written to " << filename << std::endl;
 }
 
-std::vector<std::string> vectorXdToString(const Eigen::VectorXd& vec) {
+std::vector<std::string> vectorXdToString(const Eigen::VectorXd &vec) {
     std::vector<std::string> result(vec.size());
     for (int i = 0; i < vec.size(); ++i) {
         std::ostringstream oss;
@@ -39,7 +39,6 @@ std::vector<std::string> vectorXdToString(const Eigen::VectorXd& vec) {
 }
 
 int main() {
-
     rapidcsv::Document biasDoc("../dataset/0-calibration_fts-accel.csv");
     rapidcsv::Document accelVarianceDoc("../dataset/0-steady-state_accel.csv");
     rapidcsv::Document wrenchVarianceDoc("../dataset/0-steady-state_wrench.csv");
@@ -51,6 +50,10 @@ int main() {
     rapidcsv::Document documentAccel2("../dataset/2-vibrations_accel.csv");
     rapidcsv::Document documentOrientations2("../dataset/2-vibrations_orientations.csv");
     rapidcsv::Document documentWrench2("../dataset/2-vibrations_wrench.csv");
+
+    rapidcsv::Document documentAccel3("../dataset/3-vibrations-contact_accel.csv");
+    rapidcsv::Document documentOrientations3("../dataset/3-vibrations-contact_orientations.csv");
+    rapidcsv::Document documentWrench3("../dataset/3-vibrations-contact_wrench.csv");
 
     ParameterEstimation parameter_estimation(biasDoc);
 
@@ -79,14 +82,13 @@ int main() {
         varAccel[2] = variance(accelVarianceDoc, 2);
     }
 
-    Fusion fusion(massEstimate,centerMassEstimate,varForce,varTorque,varAccel,forceBias,torqueBias,imuBias);
-    fusion.insertData(documentAccel,documentWrench,documentOrientations);
+    //Fusion fusion(massEstimate,centerMassEstimate,varForce,varTorque,varAccel,forceBias,torqueBias,imuBias);
+    //fusion.insertData(documentAccel,documentWrench,documentOrientations);
     //fusion.updateMatrix(0);
 
-    Fusion2 fusion2(massEstimate,centerMassEstimate,varForce,varTorque,varAccel,forceBias,torqueBias,imuBias);
-    fusion2.insertData(documentAccel,documentWrench,documentOrientations);
-
-    MatrixXd P = MatrixXd::Identity(9,9); // inital estimate, vetta faen egnt
+    Fusion2 fusion2(massEstimate, centerMassEstimate, varForce, varTorque, varAccel, forceBias, torqueBias, imuBias);
+    fusion2.insertData(documentAccel2, documentWrench2, documentOrientations2);
+    MatrixXd P = MatrixXd::Identity(9, 9); // inital estimate, vetta faen egnt
     VectorXd X = VectorXd::Ones(9);
 
     kalman_filter kalman_filter(
@@ -97,33 +99,40 @@ int main() {
         fusion2.getH(),
         fusion2.getQ(),
         fusion2.getR()
-        );
+    );
 
     std::vector<VectorXd> stateVariableVectorForPlotting;
+    std::vector<VectorXd> ftsEstimateVector;
 
     //fusion2.updateMatrices();
     int i = 0;
     fusion2.updateMatrices();
 
-    while (!fusion2.isFinished()) {
-        //std::cout << i << std::endl;
-        fusion2.updateMatrices();
-        kalman_filter.priori(fusion2.getU(), fusion2.getQ());
-        //std::cout << i << "A" << std::endl;
-        kalman_filter.posteriori(fusion2.getZ(),fusion2.getR(),fusion2.getH());
-        stateVariableVectorForPlotting.push_back(kalman_filter.getX());
-        //std::cout << kalman_filter.P << "BREAK" << "\n" << std::endl;
-        //if (i > 10) break;
-        //i++;
+    try {
+        while (!fusion2.isFinished()) {
+            fusion2.updateMatrices();
+
+            kalman_filter.priori(fusion2.getU(), fusion2.getQ());
+            kalman_filter.posteriori(fusion2.getZ(), fusion2.getR(), fusion2.getH());
+
+            stateVariableVectorForPlotting.push_back(kalman_filter.getX());
+            ftsEstimateVector.push_back(fusion2.getZc()*kalman_filter.getX());
+        }
+    } catch (const std::out_of_range& e) {
+        std::cout << e.what() << std::endl;
     }
 
-    std::vector<std::vector<std::string>> csvData;
-    for (const auto& vec : stateVariableVectorForPlotting) {
+    std::vector<std::vector<std::string> > csvData;
+    std::vector<std::vector<std::string> > csvDataEstimate;
+    for (const auto &vec: stateVariableVectorForPlotting) {
         csvData.push_back(vectorXdToString(vec));
     }
+    for (const auto &vec: ftsEstimateVector) {
+        csvDataEstimate.push_back(vectorXdToString(vec));
+    }
 
-    std::string filename = csvPath;
-    writeCSV(filename,csvData);
+    writeCSV(csvPath, csvData);
+    writeCSV(csvPathEstimate, csvDataEstimate);
 
     /*k
     for (int i = 0; i < fusion2.isFinished(); i++) {

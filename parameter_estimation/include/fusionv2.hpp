@@ -28,9 +28,9 @@ public:
 
         Q_base_matrix_.block<3, 3>(3, 3) = mass_ * Matrix3d::Identity(3, 3);
 
-        double fuck_trippel_trumf = sqrt(mass_center_[0]*mass_center_[0] + mass_center_[1]*mass_center_[1] + mass_center_[2]*mass_center_[2]);
+        double centerVectorLength = sqrt(mass_center_[0]*mass_center_[0] + mass_center_[1]*mass_center_[1] + mass_center_[2]*mass_center_[2]);
 
-        Q_base_matrix_.block<3, 3>(6, 6) = mass_ * fuck_trippel_trumf *  Matrix3d::Identity(3, 3);
+        Q_base_matrix_.block<3, 3>(6, 6) = mass_ * centerVectorLength *  Matrix3d::Identity(3, 3);
 
         H_f_.block<3, 3>(0,0) = MatrixXd::Zero(3, 3); //BØR ETTERSEES
         H_f_.block<3, 3>(0,3) = MatrixXd::Identity(3, 3); //BØR ETTERSEES
@@ -59,6 +59,12 @@ public:
         R_.block<3, 3>(0, 0) = R_a_;
         R_.block<6, 6>(3, 3) = R_f_;
 
+        Zc_.block<3, 3>(0,0) = -mass_*MatrixXd::Identity(3, 3);
+        Zc_.block<3, 3>(0, 3) = MatrixXd::Identity(3, 3);
+        Zc_.block<3, 3>(3,0) = -mass_*skewSymmetric(massCenterEstimate);
+        Zc_.block<3, 3>(3,6) = MatrixXd::Identity(3, 3);
+        //std::cout << Zc_ << std::endl;
+
         //Rotationmatrix from imu to fts frame
         RotationMatrix_IMU_to_FTS_ <<
             0, 0, -1,
@@ -79,9 +85,7 @@ public:
         const rapidcsv::Document& wrench,
         const rapidcsv::Document& orientation) {
 
-        std::deque accel_data = {accel.GetColumnCount(), std::vector<double>(accel.GetRowCount())};
-
-        accel_data_ = {accel.GetColumnCount(), std::vector<double>(accel.GetRowCount())};
+        accel_data_ = std::vector{accel.GetColumnCount(), std::vector<double>(accel.GetRowCount())};
         wrench_data_ = std::vector(wrench.GetColumnCount(), std::vector<double>(wrench.GetRowCount()));
         orientation_data_ = std::vector(orientation.GetColumnCount(), std::vector<double>(orientation.GetRowCount()));
 
@@ -102,7 +106,6 @@ public:
             orientation_data_[i] = orientation.GetColumn<double>(i);
         }
         prev_time_ = accel_data_[0][0];
-
         auto startTimes = {accel_data_[0][0],orientation_data_[0][0],wrench_data_[0][0]};
         auto endTimes = {accel_data_[0].back() ,orientation_data_[0].back() ,wrench_data_[0].back()};
         startTime_ = std::min(startTimes);
@@ -183,9 +186,12 @@ public:
                 if(accel_data_[0][0] == index_) {
                     updateStateVariables();
                     updateAccel();
-                    Q_ = Q_base_matrix_ * sigmak_ * (index_ - prev_time_);
-                    deleteLine(accel_data_);
+                    Q_ = Q_base_matrix_ * sigmak_ * (index_ - prev_time_)*0.000001;
                     prev_time_ = index_;
+                    if (accel_data_[0].size() != 1) {
+                        deleteLine(accel_data_);
+                    }
+                    else index_++;
                     break;
                 }
             }
@@ -193,9 +199,12 @@ public:
                 if(orientation_data_[0][0] == index_) {
                     updateStateVariables();
                     updateOrientation();
-                    Q_ = Q_base_matrix_ * sigmak_ * (index_ - prev_time_);
-                    deleteLine(orientation_data_);
+                    Q_ = Q_base_matrix_ * sigmak_ * (index_ - prev_time_)*0.000001;
                     prev_time_ = index_;
+                    if (orientation_data_[0].size() != 1) {
+                        deleteLine(orientation_data_);
+                    }
+                    else index_++;
                     break;
                 }
             }
@@ -203,9 +212,12 @@ public:
                 if(wrench_data_[0][0] == index_) {
                     updateStateVariables();
                     updateFTS();
-                    Q_ = Q_base_matrix_ * sigmak_ * (index_ - prev_time_);
-                    deleteLine(wrench_data_);
+                    Q_ = Q_base_matrix_ * sigmak_ * (index_ - prev_time_)*0.000001;
                     prev_time_ = index_;
+                    if (wrench_data_[0].size() != 1) {
+                        deleteLine(wrench_data_);
+                    }
+                    else index_++;
                     break;
                 }
             }
@@ -216,6 +228,10 @@ public:
 
     MatrixXd getZ() {
         return Z_;
+    }
+
+    MatrixXd getZc() {
+        return Zc_;
     }
 
     MatrixXd getQ() {
@@ -288,6 +304,7 @@ private:
 
     MatrixXd H_ = MatrixXd::Zero(6, 9);  // IMU output matrix
     MatrixXd Z_ = MatrixXd::Zero(6, 1);  // sensor matrise
+    MatrixXd Zc_ = MatrixXd::Zero(6, 9);
     Matrix3d RotationMatrix_IMU_to_FTS_;
 
     double sigmak_ = 0.5;

@@ -31,4 +31,6 @@ add_subdirectory(parameter_estimation)
 add_subdirectory(estimation)
 
 set(csvPath "${PROJECT_SOURCE_DIR}/data.csv")
+set(csvPathEstimate "${PROJECT_SOURCE_DIR}/dataEstimate.csv")
 target_compile_definitions(complete_estimation PRIVATE csvPath="${csvPath}")
+target_compile_definitions(complete_estimation PRIVATE csvPathEstimate="${csvPathEstimate}")

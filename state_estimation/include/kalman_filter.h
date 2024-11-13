@@ -33,7 +33,7 @@ public:
         //std::cout << "R: " << r.rows() << "x" << r.cols() << std::endl;
         Eigen::MatrixXd S = h * P * h.transpose() + r; // Innovation covariance
         //std::cout << "S: " << S.rows() << "x" << S.cols() << std::endl;
-        K = P * h.transpose() * S.inverse()*0.1; // Kalman gain
+        K = P * h.transpose() * S.inverse(); // Kalman gain
         //std::cout << "K = " << K << "\n" << std::endl;
         x = x + K * (z - h * x); // Updated state estimate
         P = (Eigen::MatrixXd::Identity(x.size(), x.size()) - K * h) * P; // Updated covariance
