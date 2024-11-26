@@ -12,12 +12,13 @@ using namespace Eigen;
 
 class Fusion2 {
 public:
+
+
     Fusion2(double mass, Vector3d massCenterEstimate, std::vector<double> forceVariance,
-        std::vector<double> torqueVariance, std::vector<double> accelVariance, Vector3d forceBias,
-        Vector3d torqueBias, Vector3d imuBias)
+            std::vector<double> torqueVariance, std::vector<double> accelVariance, Vector3d forceBias,
+            Vector3d torqueBias, Vector3d imuBias)
         : mass_(mass), mass_center_(std::move(massCenterEstimate)), varF_(forceVariance), varT_(torqueVariance), varA_(accelVariance),
             forceBias_(forceBias), torqueBias_(torqueBias), imuBias_(imuBias) {
-
         A_ = MatrixXd::Identity(9, 9);
 
         B_.block<3,3>(0,0) =  MatrixXd::Identity(3, 3);
@@ -59,17 +60,36 @@ public:
         R_.block<3, 3>(0, 0) = R_a_;
         R_.block<6, 6>(3, 3) = R_f_;
 
+        Eigen::Vector3d a = {0.00027917, 5.44378e-05, 0.043896};
+
         Zc_.block<3, 3>(0,0) = -mass_*MatrixXd::Identity(3, 3);
         Zc_.block<3, 3>(0, 3) = MatrixXd::Identity(3, 3);
-        Zc_.block<3, 3>(3,0) = -mass_*skewSymmetric(massCenterEstimate);
+        Zc_.block<3, 3>(3,0) = -mass_*skewSymmetric(a);
         Zc_.block<3, 3>(3,6) = MatrixXd::Identity(3, 3);
-        //std::cout << Zc_ << std::endl;
+        std::cout << Zc_ << std::endl;
 
         //Rotationmatrix from imu to fts frame
         RotationMatrix_IMU_to_FTS_ <<
+            0, -1, 0,
+            0, 0, 1,
+            -1, 0, 0;
+
+        RotationMatrix_IMU_to_FTS_2_ <<
+            0, 1, 0,
+            0, 0, -1,
+            -1, 0, 0;
+        RotationMatrix_IMU_to_FTS_3_ <<
             0, 0, -1,
             -1, 0, 0,
             0, 1, 0;
+        RotationMatrix_IMU_to_FTS_2_90z_ <<
+            0, 1, 0,
+            1, 0, 0,
+            0, 0, 1;
+        RotationMatrix_test_ <<
+            0, 0, 1,
+            0, 1, 0,
+            1, 0, 0;
 
         x_ = VectorXd::Zero(9);
 
@@ -88,13 +108,6 @@ public:
         accel_data_ = std::vector{accel.GetColumnCount(), std::vector<double>(accel.GetRowCount())};
         wrench_data_ = std::vector(wrench.GetColumnCount(), std::vector<double>(wrench.GetRowCount()));
         orientation_data_ = std::vector(orientation.GetColumnCount(), std::vector<double>(orientation.GetRowCount()));
-
-        /*
-        accel_data_ = std::vector<std::vector<double>>(accel.GetColumnCount(), std::vector<double>(accel.GetRowCount()));
-        wrench_data_ = std::vector<std::vector<double>>(wrench.GetColumnCount(), std::vector<double>(wrench.GetRowCount()));
-        orientation_data_ = std::vector<std::vector<double>>(orientation.GetColumnCount(), std::vector<double>(orientation.GetRowCount()));
-        */
-
 
         for (int i = 0; i < accel.GetColumnCount(); i++) {
             accel_data_[i] = accel.GetColumn<double>(i);
@@ -120,7 +133,7 @@ public:
             orientation_data_[1][0], orientation_data_[2][0], orientation_data_[3][0],
             orientation_data_[3][0], orientation_data_[4][0], orientation_data_[5][0],
             orientation_data_[6][0], orientation_data_[7][0],orientation_data_[8][0];
-        return rotation;
+        return rotation*RotationMatrix_IMU_to_FTS_;
     }
 
     Matrix3d skewSymmetric(const Eigen::Vector3d& v) { // SPØR OM DITTA E RIKTIG=!!=!=!
@@ -132,40 +145,33 @@ public:
     }
 
     void updateAccel() {
-        //std::cout << "ACCEL" << std::endl;
         H_.resize(3,9);
         H_ = H_a_;
-        //std::cout << H_ << std::endl;
         Z_.resize(3,1);
         Z_ = H_a_*x_;
-        //std::cout << Z_ << std::endl;
         R_.resize(3,3);
         R_ = R_a_;
-        //std::cout << R_ << std::endl;
     }
 
     void updateFTS() {
-        //std::cout << "FTS" << std::endl;
         H_.resize(6,9);
         H_ = H_f_;
-        //std::cout << H_ << std::endl;
         Z_.resize(6,1);
         Z_ = H_f_*x_;
-        //std::cout << Z_ << std::endl;
         R_.resize(6,6);
         R_ = R_f_;
         //std::cout << R_ << std::endl;
     }
 
     void updateOrientation() {
-        Vector3d g = {0, 0, 9.81};
+        Vector3d g = {0, 0, -9.81};
         auto ctrl = updateRotationMatrix();
         u_ = (ctrl.transpose()*g - prev_u_)*frequency_scalar_; // accel_data_[1][0]*9.81, accel_data_[2][0]*9.81, accel_data_[3][0]*9.81,
-        prev_u_ = u_;
+        prev_u_ = ctrl.transpose()*g;
     }
 
     void updateStateVariables() {
-        Vector3d thisIterationAccelData { accel_data_[1][0]*9.81, accel_data_[2][0]*9.81, accel_data_[3][0]*9.81}; // - IMUBIAS?!?!?!
+        Vector3d thisIterationAccelData { accel_data_[1][0]*-9.81, accel_data_[2][0]*-9.81, accel_data_[3][0]*-9.81}; // - IMUBIAS?!?!?!
         Vector3d accel = RotationMatrix_IMU_to_FTS_*thisIterationAccelData;
 
         x_ << accel[0], accel[1], accel[2],
@@ -306,6 +312,10 @@ private:
     MatrixXd Z_ = MatrixXd::Zero(6, 1);  // sensor matrise
     MatrixXd Zc_ = MatrixXd::Zero(6, 9);
     Matrix3d RotationMatrix_IMU_to_FTS_;
+    Matrix3d RotationMatrix_IMU_to_FTS_2_;
+    Matrix3d RotationMatrix_IMU_to_FTS_3_;
+    Matrix3d RotationMatrix_IMU_to_FTS_2_90z_;
+    Matrix3d RotationMatrix_test_;
 
     double sigmak_ = 0.5;
     std::vector<double> varF_;

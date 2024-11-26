@@ -82,12 +82,9 @@ int main() {
         varAccel[2] = variance(accelVarianceDoc, 2);
     }
 
-    //Fusion fusion(massEstimate,centerMassEstimate,varForce,varTorque,varAccel,forceBias,torqueBias,imuBias);
-    //fusion.insertData(documentAccel,documentWrench,documentOrientations);
-    //fusion.updateMatrix(0);
-
     Fusion2 fusion2(massEstimate, centerMassEstimate, varForce, varTorque, varAccel, forceBias, torqueBias, imuBias);
     fusion2.insertData(documentAccel2, documentWrench2, documentOrientations2);
+
     MatrixXd P = MatrixXd::Identity(9, 9); // inital estimate, vetta faen egnt
     VectorXd X = VectorXd::Ones(9);
 
