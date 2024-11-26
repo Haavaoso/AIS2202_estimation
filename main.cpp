@@ -63,8 +63,6 @@ int main() {
     auto massEstimate = parameter_estimation.getMassEstimate();
     auto centerMassEstimate = parameter_estimation.getCenterMassVector();
 
-    //std::cout << forceBias << " fb: " << torqueBias << " me: " << massEstimate << "cme: "<< centerMassEstimate << std::endl;
-
     std::vector<double> varForce(3);
     std::vector<double> varTorque(3);
     std::vector<double> varAccel(3);
@@ -83,7 +81,7 @@ int main() {
     }
 
     Fusion2 fusion2(massEstimate, centerMassEstimate, varForce, varTorque, varAccel, forceBias, torqueBias, imuBias);
-    fusion2.insertData(documentAccel2, documentWrench2, documentOrientations2);
+    fusion2.insertData(documentAccel3, documentWrench3, documentOrientations3);
 
     MatrixXd P = MatrixXd::Identity(9, 9); // inital estimate, vetta faen egnt
     VectorXd X = VectorXd::Ones(9);
@@ -101,9 +99,7 @@ int main() {
     std::vector<VectorXd> stateVariableVectorForPlotting;
     std::vector<VectorXd> ftsEstimateVector;
 
-    //fusion2.updateMatrices();
-    int i = 0;
-    fusion2.updateMatrices();
+    fusion2.updateMatrices(); // Initilize
 
     try {
         while (!fusion2.isFinished()) {
@@ -130,18 +126,5 @@ int main() {
 
     writeCSV(csvPath, csvData);
     writeCSV(csvPathEstimate, csvDataEstimate);
-
-    /*k
-    for (int i = 0; i < fusion2.isFinished(); i++) {
-        kalman_filter.priori(fusion.getU(), fusion.getQ());
-        fusion2.updateMatrices();
-        kalman_filter.posteriori(fusion.getZ());
-        stateVariableVectorForPlotting.push_back(kalman_filter.getX());
-    }
-    for (int i = 0; i < documentAccel.GetRowCount(); i++) {
-        kalman_filter().predict();
-        kalman_filter().update(z);
-    }
-    */
 }
 

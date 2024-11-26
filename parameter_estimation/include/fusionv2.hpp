@@ -160,7 +160,6 @@ public:
         Z_ = H_f_*x_;
         R_.resize(6,6);
         R_ = R_f_;
-        //std::cout << R_ << std::endl;
     }
 
     void updateOrientation() {
@@ -171,13 +170,12 @@ public:
     }
 
     void updateStateVariables() {
-        Vector3d thisIterationAccelData { accel_data_[1][0]*-9.81, accel_data_[2][0]*-9.81, accel_data_[3][0]*-9.81}; // - IMUBIAS?!?!?!
+        Vector3d thisIterationAccelData { accel_data_[1][0]*-9.81, accel_data_[2][0]*-9.81, accel_data_[3][0]*-9.81};
         Vector3d accel = RotationMatrix_IMU_to_FTS_*thisIterationAccelData;
 
         x_ << accel[0], accel[1], accel[2],
         wrench_data_[1][0] - forceBias_[0], wrench_data_[2][0] - forceBias_[1], wrench_data_[3][0] - forceBias_[2],
         wrench_data_[4][0] - torqueBias_[0], wrench_data_[5][0] - torqueBias_[1], wrench_data_[6][0] - torqueBias_[2];
-        //std::cout << wrench_data_[1][0] << " : " <<wrench_data_[2][0] << " : " << wrench_data_[3][0] << " : " << wrench_data_[4][0] << " : " <<wrench_data_[5][0] << " : " <<wrench_data_[6][0] << std::endl;
     }
 
     void deleteLine(std::vector<std::vector<double>> &data) {
@@ -192,7 +190,7 @@ public:
                 if(accel_data_[0][0] == index_) {
                     updateStateVariables();
                     updateAccel();
-                    Q_ = Q_base_matrix_ * sigmak_ * (index_ - prev_time_)*0.000001;
+                    Q_ = Q_base_matrix_ * sigmak_ * (index_ - prev_time_)*dt_;
                     prev_time_ = index_;
                     if (accel_data_[0].size() != 1) {
                         deleteLine(accel_data_);
@@ -205,7 +203,7 @@ public:
                 if(orientation_data_[0][0] == index_) {
                     updateStateVariables();
                     updateOrientation();
-                    Q_ = Q_base_matrix_ * sigmak_ * (index_ - prev_time_)*0.000001;
+                    Q_ = Q_base_matrix_ * sigmak_ * (index_ - prev_time_)*dt_;
                     prev_time_ = index_;
                     if (orientation_data_[0].size() != 1) {
                         deleteLine(orientation_data_);
@@ -218,7 +216,7 @@ public:
                 if(wrench_data_[0][0] == index_) {
                     updateStateVariables();
                     updateFTS();
-                    Q_ = Q_base_matrix_ * sigmak_ * (index_ - prev_time_)*0.000001;
+                    Q_ = Q_base_matrix_ * sigmak_ * (index_ - prev_time_)*dt_;
                     prev_time_ = index_;
                     if (wrench_data_[0].size() != 1) {
                         deleteLine(wrench_data_);
@@ -271,6 +269,7 @@ public:
 
 
 private:
+    double dt_ = 0.00001;
     double mass_;
     double time_step_{};
     double prev_time_ = 0.0;
