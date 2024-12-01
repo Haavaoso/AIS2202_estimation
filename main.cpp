@@ -1,8 +1,7 @@
 #include "parameter_estimation/include/ParameterEstimation.h"
-#include "parameter_estimation/include/fusion.hpp"
 #include "parameter_estimation/include/variance.h"
 #include "state_estimation/include/kalman_filter.h"
-#include "parameter_estimation/include/fusionv2.hpp"
+#include "parameter_estimation/include/sensorFusion.hpp"
 #include <iostream>
 #include <vector>
 #include <fstream>
@@ -90,12 +89,11 @@ int main() {
         std::cout << "acc: "<< i << std::endl;
     }
 
-
-
     Fusion2 fusion2(massEstimate, centerMassEstimate, varForce, varTorque, varAccel, forceBias, torqueBias, imuBias);
     fusion2.insertData(documentAccel2, documentWrench2, documentOrientations2);
+    //Change the datasets in the method above to analize different datasets
 
-    MatrixXd P = MatrixXd::Identity(9, 9); // inital estimate, vetta faen egnt
+    MatrixXd P = MatrixXd::Identity(9, 9); // inital estimate
     VectorXd X = VectorXd::Ones(9);
 
     kalman_filter kalman_filter(

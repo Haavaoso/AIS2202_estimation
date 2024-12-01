@@ -1,3 +1,9 @@
+# How to run
+
+make sure vcpkg is set up, see down below. Run the executable "complete_estimation", wait for it to finish,
+then run the python file "plotting" to see the results. Close the first window that pops up to see the second window.
+
+
 # Introduction
 This is the source template for the project of the state estimation module in AIS2202 Cybernetics.
 

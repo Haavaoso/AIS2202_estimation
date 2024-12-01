@@ -5,8 +5,7 @@
 #include "include/ParameterEstimation.h"
 #include "include/variance.h"
 #include "include/fusion.hpp"
-#include "include/fusionv2.hpp"
-#include <iostream>
+#include "include/fusionv2.hpp"#include <iostream>
 #include <Eigen/Dense>
 
 int main() {

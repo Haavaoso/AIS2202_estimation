@@ -18,8 +18,7 @@ kalman_filter::kalman_filter(
     B = B_in;
     H = H_in;
     Q = Q_in;
-    R = R_in;
-}
+    R = R_in;}
 
 void kalman_filter::priori(const Eigen::VectorXd& u, const Eigen::MatrixXd& Q){
     x = A * x + B * u;     // Predicted state estimate

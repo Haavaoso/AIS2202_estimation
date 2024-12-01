@@ -28,7 +28,6 @@ target_include_directories(complete_estimation
 
 add_subdirectory(state_estimation)
 add_subdirectory(parameter_estimation)
-add_subdirectory(estimation)
 
 set(csvPath "${PROJECT_SOURCE_DIR}/data.csv")
 set(csvPathEstimate "${PROJECT_SOURCE_DIR}/dataEstimate.csv")
