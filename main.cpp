@@ -80,8 +80,20 @@ int main() {
         varAccel[2] = variance(accelVarianceDoc, 2);
     }
 
+    for (auto i : varAccel) {
+        std::cout << "acc: "<< i << std::endl;
+    }
+    for (auto i : varForce) {
+        std::cout << "acc: "<< i << std::endl;
+    }
+    for (auto i : varTorque) {
+        std::cout << "acc: "<< i << std::endl;
+    }
+
+
+
     Fusion2 fusion2(massEstimate, centerMassEstimate, varForce, varTorque, varAccel, forceBias, torqueBias, imuBias);
-    fusion2.insertData(documentAccel3, documentWrench3, documentOrientations3);
+    fusion2.insertData(documentAccel2, documentWrench2, documentOrientations2);
 
     MatrixXd P = MatrixXd::Identity(9, 9); // inital estimate, vetta faen egnt
     VectorXd X = VectorXd::Ones(9);

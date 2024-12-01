@@ -66,7 +66,7 @@ public:
         Zc_.block<3, 3>(0, 3) = MatrixXd::Identity(3, 3);
         Zc_.block<3, 3>(3,0) = -mass_*skewSymmetric(a);
         Zc_.block<3, 3>(3,6) = MatrixXd::Identity(3, 3);
-        std::cout << Zc_ << std::endl;
+        //std::cout << Zc_ << std::endl;
 
         //Rotationmatrix from imu to fts frame
         RotationMatrix_IMU_to_FTS_ <<
@@ -275,7 +275,7 @@ private:
     double prev_time_ = 0.0;
     double s_f_ = 250;
     double s_t_ = 5000;
-    double s_a_ = 100;
+    double s_a_ = 100000;
     double f_r_ = 100.2;
     double f_f_ = 698.3;
     double f_a_ = 254.3;
